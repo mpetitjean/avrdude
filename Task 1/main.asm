@@ -2,7 +2,7 @@
 ; TestProject1.asm
 ;
 ; Created: 2/22/2017 3:00:04 PM
-; Author : channoti
+; Authors : Petitjean - Hannotier
 ;
 
 .include "m328pdef.inc"
