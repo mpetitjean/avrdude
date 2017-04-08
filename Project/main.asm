@@ -383,51 +383,48 @@ timer2_ovf:
 	PUSH temp
 	LDI temp,TCNT2_RESET_480
 	STS TCNT2,temp
-
-	loop:
-		writeColumns Cell
-		writeColumns Cell+2
-		writeColumns Cell+4
-		writeColumns Cell+6
-		writeColumns Cell+8
-		writeColumns Cell+10
-		writeColumns Cell+12
-		writeColumns Cell+14
-		writeColumns Cell+16
-		writeColumns Cell+18
-		writeColumns Cell+20
-		writeColumns Cell+22
-		writeColumns Cell+24
-		writeColumns Cell+26
-		writeColumns Cell+28
-		writeColumns Cell+30
+	writeColumns Cell
+	writeColumns Cell+2
+	writeColumns Cell+4
+	writeColumns Cell+6
+	writeColumns Cell+8
+	writeColumns Cell+10
+	writeColumns Cell+12
+	writeColumns Cell+14
+	writeColumns Cell+16
+	writeColumns Cell+18
+	writeColumns Cell+20
+	writeColumns Cell+22
+	writeColumns Cell+24
+	writeColumns Cell+26
+	writeColumns Cell+28
+	writeColumns Cell+30
 
 
-		CBI SCREEN_PORT,SCREEN_SDI
-		SBI SCREEN_PIN,SCREEN_CLK
-		SBI SCREEN_PIN,SCREEN_CLK
+	CBI SCREEN_PORT,SCREEN_SDI
+	SBI SCREEN_PIN,SCREEN_CLK
+	SBI SCREEN_PIN,SCREEN_CLK
 
-		shiftReg rowselect, 6
-		shiftReg rowselect, 5
-		shiftReg rowselect, 4
-		shiftReg rowselect, 3
-		shiftReg rowselect, 2
-		shiftReg rowselect, 1
-		shiftReg rowselect, 0
-		DEC rowoffset
-		LSR rowselect
-		BRNE end
-		LDI rowselect, 1<<6
-		LDI rowoffset, 6
-
-		; set PB4 HIGH, wait 100 µs
-		end:
-			SBI SCREEN_PIN,SCREEN_LE
-			LDS temp,TCCR2B
-			SBR temp,(1<<CS02)|(1<<CS01)|(1<<CS00)
-			STS TCCR0B,temp
-			POP temp
-			RETI
+	shiftReg rowselect, 6
+	shiftReg rowselect, 5
+	shiftReg rowselect, 4
+	shiftReg rowselect, 3
+	shiftReg rowselect, 2
+	shiftReg rowselect, 1
+	shiftReg rowselect, 0
+	DEC rowoffset
+	LSR rowselect
+	BRNE end
+	LDI rowselect, 1<<6
+	LDI rowoffset, 6
+	; set PB4 HIGH, wait 100 µs
+	end:
+		SBI SCREEN_PIN,SCREEN_LE
+		LDS temp,TCCR2B
+		SBR temp,(1<<CS02)|(1<<CS01)|(1<<CS00)
+		STS TCCR0B,temp
+		POP temp
+		RETI
 
 .ORG 0x800
 CharacterEmpty:
