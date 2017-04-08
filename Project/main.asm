@@ -82,6 +82,8 @@ STD Y+1, temp
 	LDI temp,(1<<COL1)|(1<<COL2)|(1<<COL3)|(1<<COL4)
 	OUT KEYB_DDR,temp
 	NOP
+	NOP
+	NOP
 	; check which row is LOW
 	SBIS KEYB_PIN,ROW1
 	RJMP @0
@@ -214,7 +216,6 @@ init:
 	LDI rowoffset, 6
 	LDI rowselect, 1<<6
 
-
 	SEI
 
 	CLT
@@ -228,6 +229,8 @@ main:
 		OUT KEYB_PORT,temp
 		LDI temp,(1<<ROW1)|(1<<ROW2)|(1<<ROW3)|(1<<ROW4)
 		OUT KEYB_DDR,temp
+		NOP
+		NOP
 		NOP
 		; COL1 is LOW => button 11 pressed
 		SBIS KEYB_PIN,COL1
