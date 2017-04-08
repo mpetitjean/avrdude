@@ -386,22 +386,22 @@ timer2_ovf:
 	PUSH temp
 	LDI temp,TCNT2_RESET_480
 	STS TCNT2,temp
-	writeColumns Cell
-	writeColumns Cell+2
-	writeColumns Cell+4
-	writeColumns Cell+6
-	writeColumns Cell+8
-	writeColumns Cell+10
-	writeColumns Cell+12
-	writeColumns Cell+14
-	writeColumns Cell+16
-	writeColumns Cell+18
-	writeColumns Cell+20
-	writeColumns Cell+22
-	writeColumns Cell+24
-	writeColumns Cell+26
-	writeColumns Cell+28
 	writeColumns Cell+30
+	writeColumns Cell+28
+	writeColumns Cell+26
+	writeColumns Cell+24
+	writeColumns Cell+22
+	writeColumns Cell+20
+	writeColumns Cell+18
+	writeColumns Cell+16
+	writeColumns Cell+14
+	writeColumns Cell+12
+	writeColumns Cell+10
+	writeColumns Cell+8
+	writeColumns Cell+6
+	writeColumns Cell+4
+	writeColumns Cell+2
+	writeColumns Cell
 
 
 	CBI SCREEN_PORT,SCREEN_SDI
