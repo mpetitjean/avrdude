@@ -145,9 +145,15 @@ init:
 	
 	SEI
 	
-	LDI ZL, low(CharacterB<<1)
-	LDI ZH, high(CharacterB<<1)
-	
+
+	LDI YH, high(0x0100)
+	LDI YL, low(0x0100)
+
+	LDI r18, low(Character7<<1)
+	ST Y, r18
+	LDI r18, high(Character7<<1)
+	STD Y+1, r18
+	CLT
 	RJMP main
 
 
@@ -173,7 +179,12 @@ main:
 		reset:
 			SBI LED_PORT,LEDUP_P
 			SBI LED_PORT,LEDDOWN_P
+			BRTS noend
 			RJMP main
+			noend: ADIW YL, 2
+			CLT
+			RJMP main
+
 		
 		C1Pressed:
 			keyboardStep2 C1R1Pressed,C1R2Pressed,C1R3Pressed,C1R4Pressed
@@ -189,99 +200,147 @@ main:
 
 		C1R1Pressed:
 			; 7 pressed -> 
-			LDI ZL, low(Character7<<1)
-			LDI ZH, high(Character7<<1)
+			LDI r18, low(Character7<<1)
+			ST Y, r18
+			LDI r18, high(Character7<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C1R2Pressed:
 			; 4 pressed -> 
-			LDI ZL, low(Character4<<1)
-			LDI ZH, high(Character4<<1)
+			LDI r18, low(Character4<<1)
+			ST Y, r18
+			LDI r18, high(Character4<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C1R3Pressed:
 			; 1 pressed -> 
-			LDI ZL, low(Character1<<1)
-			LDI ZH, high(Character1<<1)
+			LDI r18, low(Character1<<1)
+			ST Y, r18
+			LDI r18, high(Character1<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C1R4Pressed:
 			; A pressed -> 
-			LDI ZL, low(CharacterA<<1)
-			LDI ZH, high(CharacterA<<1)
+			LDI r18, low(CharacterA<<1)
+			ST Y, r18
+			LDI r18, high(CharacterA<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C2R1Pressed:
 			; 8 pressed -> 
-			LDI ZL, low(Character8<<1)
-			LDI ZH, high(Character8<<1)
+			LDI r18, low(Character8<<1)
+			ST Y, r18
+			LDI r18, high(Character8<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C2R2Pressed:
 			; 5 pressed -> 
-			LDI ZL, low(Character5<<1)
-			LDI ZH, high(Character5<<1)
+			LDI r18, low(Character5<<1)
+			ST Y, r18
+			LDI r18, high(Character5<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C2R3Pressed:
 			; 2 pressed -> 
-			LDI ZL, low(Character2<<1)
-			LDI ZH, high(Character2<<1)
+			LDI r18, low(Character2<<1)
+			ST Y, r18
+			LDI r18, high(Character2<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C2R4Pressed:
 			; 0 pressed -> 
-			LDI ZL, low(Character0<<1)
-			LDI ZH, high(Character0<<1)
+			LDI r18, low(Character0<<1)
+			ST Y, r18
+			LDI r18, high(Character0<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C3R1Pressed:
 			; 9 pressed -> 
-			LDI ZL, low(Character9<<1)
-			LDI ZH, high(Character9<<1)
+			LDI r18, low(Character9<<1)
+			ST Y, r18
+			LDI r18, high(Character9<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C3R2Pressed:
 			; 6 pressed -> 
-			LDI ZL, low(Character6<<1)
-			LDI ZH, high(Character6<<1)
+			LDI r18, low(Character6<<1)
+			ST Y, r18
+			LDI r18, high(Character6<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C3R3Pressed:
 			; 3 pressed -> 
-			LDI ZL, low(Character3<<1)
-			LDI ZH, high(Character3<<1)
+			LDI r18, low(Character3<<1)
+			ST Y, r18
+			LDI r18, high(Character3<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C3R4Pressed:
 			; B pressed -> 
-			LDI ZL, low(CharacterB<<1)
-			LDI ZH, high(CharacterB<<1)
+			LDI r18, low(CharacterB<<1)
+			ST Y, r18
+			LDI r18, high(CharacterB<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C4R1Pressed:
 			; F pressed -> 
-			LDI ZL, low(CharacterF<<1)
-			LDI ZH, high(CharacterF<<1)
+			LDI r18, low(CharacterF<<1)
+			ST Y, r18
+			LDI r18, high(CharacterF<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C4R2Pressed:
 			; E pressed -> 
-			LDI ZL, low(CharacterE<<1)
-			LDI ZH, high(CharacterE<<1)
+			LDI r18, low(CharacterE<<1)
+			ST Y, r18
+			LDI r18, high(CharacterE<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C4R3Pressed:
 			; D pressed -> 
-			LDI ZL, low(CharacterD<<1)
-			LDI ZH, high(CharacterD<<1)
+			LDI r18, low(CharacterD<<1)
+			ST Y, r18
+			LDI r18, high(CharacterD<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 		C4R4Pressed:
 			; C pressed -> 
 			CBI LED_PORT,LEDUP_P
-			LDI ZL, low(CharacterC<<1)
-			LDI ZH, high(CharacterC<<1)
+			LDI r18, low(CharacterC<<1)
+			ST Y, r18
+			LDI r18, high(CharacterC<<1)
+			STD Y+1, r18
+			SET
 			RJMP main
 
 
@@ -310,21 +369,183 @@ timer2_ovf:
 		DEC r22
 		BRPL notreset
 		LDI r22, 6
-		notreset: 
-		MOV YL,ZL
+		notreset:
+		LDS ZL, 0x0100
+		LDS ZH, 0x0101
 		ADD ZL,r22
 		LPM r1, Z
 
-		LDI r18,0x10
-		columns:
-			shiftReg r1, 0
-			shiftReg r1, 1
-			shiftReg r1, 2
-			shiftReg r1, 3
-			shiftReg r1, 4
-			DEC r18
-			BRNE columns
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
 		
+		LDS ZL, 0x0102
+		LDS ZH, 0x0103
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0104
+		LDS ZH, 0x0105
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0106
+		LDS ZH, 0x0107
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0108
+		LDS ZH, 0x0109
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0110
+		LDS ZH, 0x0111
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0112
+		LDS ZH, 0x0113
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0114
+		LDS ZH, 0x0115
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0116
+		LDS ZH, 0x0117
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0118
+		LDS ZH, 0x0119
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0120
+		LDS ZH, 0x0121
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0122
+		LDS ZH, 0x0123
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0124
+		LDS ZH, 0x0125
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0126
+		LDS ZH, 0x0127
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0128
+		LDS ZH, 0x0129
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
+		LDS ZL, 0x0130
+		LDS ZH, 0x0131
+		ADD ZL,r22
+		LPM r1, Z
+
+		shiftReg r1, 0
+		shiftReg r1, 1
+		shiftReg r1, 2
+		shiftReg r1, 3
+		shiftReg r1, 4
+
 		CBI SCREEN_PORT,SCREEN_DATA
 		SBI SCREEN_PIN,SCREEN_CLK
 		SBI SCREEN_PIN,SCREEN_CLK
@@ -336,7 +557,6 @@ timer2_ovf:
 		shiftReg r21, 2
 		shiftReg r21, 1
 		shiftReg r21, 0
-
 		LSR r21
 		BRNE end
 		LDI r21, 0b1000000
@@ -345,7 +565,6 @@ timer2_ovf:
 		; set PB4 HIGH, wait 100 µs
 		end:
 			SBI SCREEN_PIN,4
-			MOV ZL,YL
 			LDS r16,TCCR2B
 			SBR r16,(1<<CS02)|(1<<CS01)|(1<<CS00)
 			STS TCCR0B,r16
