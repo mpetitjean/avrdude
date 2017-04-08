@@ -11,7 +11,7 @@
 
 
 ;------------
-; CONSTANTS 
+; CONSTANTS
 ;------------
 
 ;KEYBOARD - MATRIX LIKE NUMEROTATION
@@ -19,8 +19,8 @@
 .equ KEYB_DDR	= DDRD
 .equ KEYB_PORT	= PORTD
 .equ ROW1		= 7
-.equ ROW2		= 6 
-.equ ROW3		= 5 
+.equ ROW2		= 6
+.equ ROW3		= 5
 .equ ROW4		= 4
 .equ COL1		= 3
 .equ COL2		= 2
@@ -75,7 +75,7 @@ LDI temp, high(@0<<1)
 STD Y+1, temp
 .ENDMACRO
 
-.MACRO keyboardStep2	
+.MACRO keyboardStep2
 	; switch in/out for rows and columns
 	LDI temp,(1<<ROW1)|(1<<ROW2)|(1<<ROW3)|(1<<ROW4)
 	OUT KEYB_PORT,temp
@@ -108,7 +108,7 @@ shiftReg temp, 4
 .ENDMACRO
 
 ;-------
-; CODE 
+; CODE
 ;-------
 
 .ORG 0x0000
@@ -174,19 +174,19 @@ init:
 
 
 	; configure timer 1 in normal mode (count clk signals)
-	; WGM20 = 0   WGM21 = 0      
+	; WGM20 = 0   WGM21 = 0
 	; p155 datasheet
 	LDS temp,TCCR2A
 	CBR temp,(1<<WGM20)|(1<<WGM21)
 	STS TCCR2A,temp
-	
+
 	; configure prescaler to 1024
 	; CS12=0 CS11=0 CS10=1
 	LDS temp,TCCR2B
 	CBR temp,(1<<WGM22)
 	SBR temp,(1<<CS22)|(1<<CS21)|(1<<CS20)
 	STS TCCR2B,temp
-	
+
 	; activate overflow interrupt timer 1
 	; set TOIE12
 	LDS temp,TIMSK2
@@ -209,11 +209,11 @@ init:
 	SBR temp,(1<<TOIE0)
 	STS TIMSK0,temp
 
-	
+
 	;Row offset + Row select
 	LDI rowoffset, 6
 	LDI rowselect, 1<<6
-	
+
 
 	SEI
 
@@ -249,7 +249,7 @@ main:
 			CLT
 			RJMP main
 
-		
+
 		C1Pressed:
 			keyboardStep2 C1R1Pressed,C1R2Pressed,C1R3Pressed,C1R4Pressed
 
@@ -263,97 +263,97 @@ main:
 			keyboardStep2 C4R1Pressed,C4R2Pressed,C4R3Pressed,C4R4Pressed
 
 		C1R1Pressed:
-			; 7 pressed -> 
+			; 7 pressed ->
 			charToSram Character7
 			SET
 			RJMP main
 
 		C1R2Pressed:
-			; 4 pressed -> 
+			; 4 pressed ->
 			charToSram Character4
 			SET
 			RJMP main
 
 		C1R3Pressed:
-			; 1 pressed -> 
+			; 1 pressed ->
 			charToSram Character1
 			SET
 			RJMP main
 
 		C1R4Pressed:
-			; A pressed -> 
+			; A pressed ->
 			charToSram CharacterA
 			SET
 			RJMP main
 
 		C2R1Pressed:
-			; 8 pressed -> 
+			; 8 pressed ->
 			charToSram Character8
 			SET
 			RJMP main
 
 		C2R2Pressed:
-			; 5 pressed -> 
+			; 5 pressed ->
 			charToSram Character5
 			SET
 			RJMP main
 
 		C2R3Pressed:
-			; 2 pressed -> 
+			; 2 pressed ->
 			charToSram Character2
 			SET
 			RJMP main
 
 		C2R4Pressed:
-			; 0 pressed -> 
+			; 0 pressed ->
 			charToSram Character2
 			SET
 			RJMP main
 
 		C3R1Pressed:
-			; 9 pressed -> 
+			; 9 pressed ->
 			charToSram Character9
 			SET
 			RJMP main
 
 		C3R2Pressed:
-			; 6 pressed -> 
+			; 6 pressed ->
 			charToSram Character6
 			SET
 			RJMP main
 
 		C3R3Pressed:
-			; 3 pressed -> 
+			; 3 pressed ->
 			charToSram Character3
 			SET
 			RJMP main
 
 		C3R4Pressed:
-			; B pressed -> 
+			; B pressed ->
 			charToSram CharacterB
 			SET
 			RJMP main
 
 		C4R1Pressed:
-			; F pressed -> 
+			; F pressed ->
 			charToSram CharacterF
 			SET
 			RJMP main
 
 		C4R2Pressed:
-			; E pressed -> 
+			; E pressed ->
 			charToSram CharacterE
 			SET
 			RJMP main
 
 		C4R3Pressed:
-			; D pressed -> 
+			; D pressed ->
 			charToSram CharacterD
 			SET
 			RJMP main
 
 		C4R4Pressed:
-			; C pressed -> 
+			; C pressed ->
 			CBI LED_PORT,LEDUP_P
 			charToSram CharacterC
 			SET
@@ -378,7 +378,7 @@ timer0_ovf:
 
 
 
-timer2_ovf: 
+timer2_ovf:
 	; interruption routine
 	PUSH temp
 	LDI temp,TCNT2_RESET_480
@@ -433,50 +433,50 @@ timer2_ovf:
 CharacterEmpty:
 	.db 0, 0, 0, 0, 0, 0, 0, 0
 
-CharacterA: 
+CharacterA:
 	.db 0b00110, 0b01001, 0b01001, 0b01001, 0b01111, 0b01001, 0b01001, 0
 
-CharacterB: 
+CharacterB:
 	.db 0b01110, 0b01001, 0b01001, 0b01110, 0b01001, 0b01001, 0b01110, 0
 
-CharacterC: 
+CharacterC:
 	.db 0b00111, 0b01000, 0b01000, 0b01000, 0b01000, 0b01000, 0b00111, 0
 
-CharacterD: 
+CharacterD:
 	.db 0b01110, 0b01001, 0b01001, 0b01001, 0b01001, 0b01001, 0b01110, 0
 
-CharacterE: 
+CharacterE:
 	.db 0b01111, 0b01000, 0b01000, 0b01110, 0b01000, 0b01000, 0b01111, 0
 
-CharacterF: 
+CharacterF:
 	.db 0b01111, 0b01000, 0b01000, 0b01110, 0b01000, 0b01000, 0b01000, 0
 
-Character0: 
+Character0:
 	.db 0b01111, 0b01001, 0b01001, 0b01001, 0b01001, 0b01001, 0b01111, 0
 
-Character1: 
+Character1:
 	.db 0b00010, 0b00110, 0b01010, 0b00010, 0b00010, 0b00010, 0b00010, 0
 
-Character2: 
+Character2:
 	.db 0b01111, 0b00001, 0b00001, 0b01111, 0b01000, 0b01000, 0b01111, 0
 
-Character3: 
+Character3:
 	.db 0b01111, 0b00001, 0b00001, 0b00111, 0b00001, 0b00001, 0b01111, 0
 
-Character4: 
+Character4:
 	.db 0b01001, 0b01001, 0b01001, 0b01111, 0b00001, 0b00001, 0b00001, 0
 
-Character5: 
+Character5:
 	.db 0b01111, 0b01000, 0b01000, 0b01111, 0b00001, 0b00001, 0b01111, 0
 
-Character6: 
+Character6:
 	.db 0b01111, 0b01000, 0b01000, 0b01111, 0b01001, 0b01001, 0b01111, 0
 
-Character7: 
+Character7:
 	.db 0b01111, 0b00001, 0b00001, 0b00010, 0b00100, 0b00100, 0b00100, 0
 
-Character8: 
+Character8:
 	.db 0b01111, 0b01001, 0b01001, 0b01111, 0b01001, 0b01001, 0b01111, 0
 
-Character9: 
+Character9:
 	.db 0b01111, 0b01001, 0b01001, 0b01111, 0b00001, 0b00001, 0b01111, 0
