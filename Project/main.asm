@@ -245,6 +245,7 @@ main:
             INC switch
             CLT
             SBRS switch, 0
+
             ST Y+, asciiof
             RJMP main
 
@@ -263,98 +264,98 @@ main:
 
         C1R1Pressed:
             ; 7 pressed ->
-            HexToASCII $7
+            HexToASCII $7<<1
             SET
             RJMP main
 
         C1R2Pressed:
             ; 4 pressed ->
-            HexToASCII $4
+            HexToASCII $7<<1
             SET
             RJMP main
 
         C1R3Pressed:
             ; 1 pressed ->
-            HexToASCII $1
+            HexToASCII $1<<1
             SET
             RJMP main
 
         C1R4Pressed:
             ; A pressed ->
-            HexToASCII $A
+            HexToASCII $A<<1
             SET
             RJMP main
 
         C2R1Pressed:
             ; 8 pressed ->
-            HexToASCII $8
+            HexToASCII $8<<1
             SET
             RJMP main
 
         C2R2Pressed:
             ; 5 pressed ->
-            HexToASCII $5
+            HexToASCII $5<<1
             SET
             RJMP main
 
         C2R3Pressed:
             ; 2 pressed ->
-            HexToASCII $2
+            HexToASCII $2<<1
             SET
             RJMP main
 
         C2R4Pressed:
             ; 0 pressed ->
-            HexToASCII $0
+            HexToASCII $0<<1
             SET
             RJMP main
 
         C3R1Pressed:
             ; 9 pressed ->
-            HexToASCII $9
+            HexToASCII $9<<1
             SET
             RJMP main
 
         C3R2Pressed:
             ; 6 pressed ->
-            HexToASCII $6
+            HexToASCII $6<<1
             SET
             RJMP main
 
         C3R3Pressed:
             ; 3 pressed ->
-            HexToASCII $3
+            HexToASCII $3<<1
             SET
             RJMP main
 
         C3R4Pressed:
             ; B pressed ->
-            HexToASCII $B
+            HexToASCII $B<<1
             SET
             RJMP main
 
         C4R1Pressed:
             ; F pressed ->
-            HexToASCII $F
+            HexToASCII $F<<1
             SET
             RJMP main
 
         C4R2Pressed:
             ; E pressed ->
-            HexToASCII $E
+            HexToASCII $E<<1
             SET
             RJMP main
 
         C4R3Pressed:
             ; D pressed ->
-            HexToASCII $D
+            HexToASCII $D<<1
             SET
             RJMP main
 
         C4R4Pressed:
             ; C pressed ->
             CBI LED_PORT,LEDUP_P
-            HexToASCII $C
+            HexToASCII $C<<1
             SET
             RJMP main
 
@@ -424,7 +425,6 @@ timer2_ovf:
         POP temp
         RETI
 
-.ORG 0x800
 
 ASCII:
     .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
@@ -436,65 +436,132 @@ ASCII:
     .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
     .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
     .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty
+    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty
     .dw Character0, Character1, Character2, Character3, Character4, Character5, Character6
     .dw Character7, Character8, Character9
     .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
     .dw CharacterEmpty, CharacterEmpty
-    .dw CharacterA, CharacterB, CharacterC, CharacterD, CharacterE, CharacterF, CharacterF
-    .dw CharacterF, CharacterF, CharacterF, CharacterF, CharacterF, CharacterF, CharacterF
-    .dw CharacterF, CharacterF, CharacterF, CharacterF, CharacterF, CharacterF, CharacterF
-    .dw CharacterF, CharacterF, CharacterF, CharacterF, CharacterF, 
+    .dw CharacterA, CharacterB, CharacterC, CharacterD, CharacterE, CharacterF, CharacterG
+    .dw CharacterH, CharacterI, CharacterJ, CharacterK, CharacterL, CharacterM, CharacterN
+    .dw CharacterO, CharacterP, CharacterQ, CharacterR, CharacterS, CharacterT, CharacterU
+    .dw CharacterV, CharacterW, CharacterX, CharacterY, CharacterZ
+    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
+    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
+    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
+    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
+    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
+    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
+    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
+    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty
+
 
 CharacterEmpty:
     .db 0, 0, 0, 0, 0, 0, 0, 0
 
 CharacterA:
-    .db 0b00110, 0b01001, 0b01001, 0b01001, 0b01111, 0b01001, 0b01001, 0
+    .db 0b0110, 0b1001, 0b1001, 0b1001, 0b1111, 0b1001, 0b1001, 0
 
 CharacterB:
-    .db 0b01110, 0b01001, 0b01001, 0b01110, 0b01001, 0b01001, 0b01110, 0
+    .db 0b1110, 0b1001, 0b1001, 0b1110, 0b1001, 0b1001, 0b1110, 0
 
 CharacterC:
-    .db 0b00111, 0b01000, 0b01000, 0b01000, 0b01000, 0b01000, 0b00111, 0
+    .db 0b0111, 0b1000, 0b1000, 0b1000, 0b1000, 0b1000, 0b0111, 0
 
 CharacterD:
-    .db 0b01110, 0b01001, 0b01001, 0b01001, 0b01001, 0b01001, 0b01110, 0
+    .db 0b1110, 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b1110, 0
 
 CharacterE:
-    .db 0b01111, 0b01000, 0b01000, 0b01110, 0b01000, 0b01000, 0b01111, 0
+    .db 0b1111, 0b1000, 0b1000, 0b1110, 0b1000, 0b1000, 0b1111, 0
 
 CharacterF:
-    .db 0b01111, 0b01000, 0b01000, 0b01110, 0b01000, 0b01000, 0b01000, 0
+    .db 0b1111, 0b1000, 0b1000, 0b1110, 0b1000, 0b1000, 0b1000, 0
+
+CharacterG:
+    .db 0b1111, 0b1000, 0b1000, 0b1000, 0b1011, 0b1001, 0b1111, 0
+
+CharacterH:
+    .db 0b1001, 0b1001, 0b1001, 0b1111, 0b1001, 0b1001, 0b1001, 0
+
+CharacterI:
+    .db 0b11111, 0b0100, 0b0100, 0b0100, 0b0100, 0b0100, 0b11111, 0
+
+CharacterJ:
+    .db 0b1111, 0b0010, 0b0010, 0b0010, 0b0010, 0b0010, 0b1110, 0
+
+CharacterK:
+    .db 0b1001, 0b1010, 0b1100, 0b1000, 0b1100, 0b1010, 0b1001, 0
+
+CharacterL:
+    .db 0b1000, 0b1000, 0b1000, 0b1000, 0b1000, 0b1000, 0b1111, 0
+
+CharacterM:
+    .db 0b1001, 0b1111, 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0
+
+CharacterN:
+    .db 0b1001, 0b1101, 0b1011, 0b1001, 0b1001, 0b1001, 0b1001, 0
+
+CharacterO:
+    .db 0b1111, 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b1111, 0
+
+CharacterP:
+    .db 0b1111, 0b1001, 0b1001, 0b1111, 0b1000, 0b1000, 0b1000, 0
+
+CharacterQ:
+    .db 0b0110, 0b1001, 0b1001, 0b1001, 0b1111, 0b1011, 0b1001, 0
+
+CharacterR:
+    .db 0b1111, 0b1001, 0b1001, 0b1111, 0b1100, 0b1010, 0b1001, 0
+
+CharacterS:
+    .db 0b0111, 0b1000, 0b1000, 0b0110, 0b0001, 0b0001, 0b0111, 0
+
+CharacterT:
+    .db 0b11111, 0b0100, 0b0100, 0b0100, 0b0100, 0b0100, 0b0100, 0
+
+CharacterU:
+    .db 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b1111, 0
+
+CharacterV:
+    .db 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b0110, 0
+
+CharacterW:
+    .db 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b1111, 0b1001, 0
+
+CharacterX:
+    .db 0b1001, 0b1001, 0b1001, 0b0110, 0b1001, 0b1001, 0b1001, 0
+
+CharacterY:
+    .db 0b1001, 0b1001, 0b1001, 0b1111, 0b0010, 0b0100, 0b1000, 0
+
+CharacterZ:
+    .db 0b1111, 0b0001, 0b0001, 0b0110, 0b1000, 0b1000, 0b1111, 0
 
 Character0:
-    .db 0b01111, 0b01001, 0b01001, 0b01001, 0b01001, 0b01001, 0b01111, 0
+    .db 0b1111, 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b1111, 0
 
 Character1:
-    .db 0b00010, 0b00110, 0b01010, 0b00010, 0b00010, 0b00010, 0b00010, 0
+    .db 0b0010, 0b0110, 0b1010, 0b0010, 0b0010, 0b0010, 0b0010, 0
 
 Character2:
-    .db 0b01111, 0b00001, 0b00001, 0b01111, 0b01000, 0b01000, 0b01111, 0
+    .db 0b1111, 0b0001, 0b0001, 0b1111, 0b1000, 0b1000, 0b1111, 0
 
 Character3:
-    .db 0b01111, 0b00001, 0b00001, 0b00111, 0b00001, 0b00001, 0b01111, 0
+    .db 0b1111, 0b0001, 0b0001, 0b0111, 0b0001, 0b0001, 0b1111, 0
 
 Character4:
-    .db 0b01001, 0b01001, 0b01001, 0b01111, 0b00001, 0b00001, 0b00001, 0
+    .db 0b1001, 0b1001, 0b1001, 0b1111, 0b0001, 0b0001, 0b0001, 0
 
 Character5:
-    .db 0b01111, 0b01000, 0b01000, 0b01111, 0b00001, 0b00001, 0b01111, 0
+    .db 0b1111, 0b1000, 0b1000, 0b1111, 0b0001, 0b0001, 0b1111, 0
 
 Character6:
-    .db 0b01111, 0b01000, 0b01000, 0b01111, 0b01001, 0b01001, 0b01111, 0
+    .db 0b1111, 0b1000, 0b1000, 0b1111, 0b1001, 0b1001, 0b1111, 0
 
 Character7:
-    .db 0b01111, 0b00001, 0b00001, 0b00010, 0b00100, 0b00100, 0b00100, 0
+    .db 0b1111, 0b0001, 0b0001, 0b0010, 0b0100, 0b0100, 0b0100, 0
 
 Character8:
-    .db 0b01111, 0b01001, 0b01001, 0b01111, 0b01001, 0b01001, 0b01111, 0
+    .db 0b1111, 0b1001, 0b1001, 0b1111, 0b1001, 0b1001, 0b1111, 0
 
 Character9:
-    .db 0b01111, 0b01001, 0b01001, 0b01111, 0b00001, 0b00001, 0b01111, 0
+    .db 0b1111, 0b1001, 0b1001, 0b1111, 0b0001, 0b0001, 0b1111, 0
