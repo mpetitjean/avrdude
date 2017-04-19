@@ -1,14 +1,11 @@
 ;
-; task10
+; PROJECT
+; EnigmAssembly
 ;
 ; Created: 08/03/2017 17:00:00
-; Author : Mathieu Petitjean
+; Author : Mathieu Petitjean & Cedric Hannotier
 
 .include "m328pdef.inc"
-
-
-
-
 
 ;------------
 ; CONSTANTS
@@ -58,6 +55,7 @@
 .DSEG
 Cell: .BYTE 16; ASCII offset by cell
 .CSEG
+
 ;--------
 ; MACROS
 ;--------
@@ -78,7 +76,7 @@ LDI asciiof, @0<<4
 SBR asciiof, @0
 .ENDMACRO
 
-; To detect key pressed from keyboard
+; To detect key pressed from keyboard (step 2 of two-steps method)
 .MACRO keyboardStep2
     ; switch in/out for rows and columns
     LDI temp,(1<<ROW1)|(1<<ROW2)|(1<<ROW3)|(1<<ROW4)
@@ -153,7 +151,8 @@ init:
     CLR zero
     CLR switch
 
-    ; Store Cell table adress in X and Y, Y will be use to point to the next cell we need to configure, X will store the adress of the Cell table
+    ; Store Cell table adress in X and Y, Y will be used to point to the next cell we need to configure
+    ; X will store the adress of the Cell table
     LDI YH, high(Cell)
     LDI YL, low(Cell)
     LDI XH, high(Cell)
@@ -177,7 +176,7 @@ init:
     STD Y+14, zero
     STD Y+15, zero
 
-
+    ; TIMER 1 - each line needs to be refreshed at 60Hz
     ; configure timer 1 in normal mode (count clk signals)
     ; WGM20 = 0   WGM21 = 0
     ; p155 datasheet
@@ -198,6 +197,7 @@ init:
     SBR temp,(1<<TOIE2)
     STS TIMSK2,temp
 
+    ; TIMER 0 - counts the 100 us to activate display when needed (disabled at init)
     ; configure timer0 in normal mode
     LDS temp,TCCR0A
     CBR temp,(1<<WGM00)|(1<<WGM01)
@@ -229,147 +229,148 @@ init:
 
 
 main:
+	
+	; STEP 1 of Keyboard check
+	; Check if all COL are HIGH
+    ; First set all rows to LOW as output and cols as inputs
+    LDI temp,(1<<COL1)|(1<<COL2)|(1<<COL3)|(1<<COL4)
+    OUT KEYB_PORT,temp
+    LDI temp,(1<<ROW1)|(1<<ROW2)|(1<<ROW3)|(1<<ROW4)
+    OUT KEYB_DDR,temp
+    NOP
+    NOP
+    NOP
+    ; COLx is LOW => check for the rows (step2)
+    SBIS KEYB_PIN,COL1
+    RJMP C1Pressed
+    SBIS KEYB_PIN,COL2
+    RJMP C2Pressed
+    SBIS KEYB_PIN,COL3
+    RJMP C3Pressed
+    SBIS KEYB_PIN,COL4
+    RJMP C4Pressed
+    RJMP reset
+
+    reset:
+    	; no COL is detected to be pressed, rows are not checked
+        SBI LED_PORT,LEDUP_P
+        SBI LED_PORT,LEDDOWN_P
+        BRTC main               ; if T = 0 → no key pressed → jump to main
+        INC switch              ; if T = 1 → key pressed → increment the switch(select if low or high part of a byte)
+        CLT                     ; clear T
+        SBRS switch, 0          ; skip if switch(0) = 1 (meaning that we only have written the high part of the ASCII offset)
+        ST Y+, asciiof          ; if ASCCI offset written → store it in the correct part of the cell table
+        RJMP main
 
 
-    ; Check if all COL are HIGH
-        ; First set all rows to LOW as output and cols as inputs
-        LDI temp,(1<<COL1)|(1<<COL2)|(1<<COL3)|(1<<COL4)
-        OUT KEYB_PORT,temp
-        LDI temp,(1<<ROW1)|(1<<ROW2)|(1<<ROW3)|(1<<ROW4)
-        OUT KEYB_DDR,temp
-        NOP
-        NOP
-        NOP
-        ; COL1 is LOW => button 11 pressed
-        SBIS KEYB_PIN,COL1
-        RJMP C1Pressed
-        SBIS KEYB_PIN,COL2
-        RJMP C2Pressed
-        SBIS KEYB_PIN,COL3
-        RJMP C3Pressed
-        SBIS KEYB_PIN,COL4
-        RJMP C4Pressed
-        RJMP reset
+    C1Pressed:
+        keyboardStep2 C1R1Pressed,C1R2Pressed,C1R3Pressed,C1R4Pressed
 
-        reset:
-            SBI LED_PORT,LEDUP_P
-            SBI LED_PORT,LEDDOWN_P
-            BRTC main               ; if T = 0 → no key pressed → jump to main
-            INC switch              ; if T = 1 → key pressed → increment the swicht (select if low or high part of a byte)
-            CLT                     ; clear T
-            SBRS switch, 0          ; skip if switch(0) = 1 (meaning that we only have written the high part of the ASCII offset)
-            ST Y+, asciiof          ; if ASCCI offset written → store it in the correct part of the cell table
-            RJMP main
+    C2Pressed:
+        keyboardStep2 C2R1Pressed,C2R2Pressed,C2R3Pressed,C2R4Pressed
 
+    C3Pressed:
+        keyboardStep2 C3R1Pressed,C3R2Pressed,C3R3Pressed,C3R4Pressed
 
-        C1Pressed:
-            keyboardStep2 C1R1Pressed,C1R2Pressed,C1R3Pressed,C1R4Pressed
+    C4Pressed:
+        keyboardStep2 C4R1Pressed,C4R2Pressed,C4R3Pressed,C4R4Pressed
 
-        C2Pressed:
-            keyboardStep2 C2R1Pressed,C2R2Pressed,C2R3Pressed,C2R4Pressed
+    C1R1Pressed:
+        ; 7 pressed ->
+        HexToASCII $7<<1
+        SET
+        RJMP main
 
-        C3Pressed:
-            keyboardStep2 C3R1Pressed,C3R2Pressed,C3R3Pressed,C3R4Pressed
+    C1R2Pressed:
+        ; 4 pressed ->
+        HexToASCII $4<<1
+        SET
+        RJMP main
 
-        C4Pressed:
-            keyboardStep2 C4R1Pressed,C4R2Pressed,C4R3Pressed,C4R4Pressed
+    C1R3Pressed:
+        ; 1 pressed ->
+        HexToASCII $1<<1
+        SET
+        RJMP main
 
-        C1R1Pressed:
-            ; 7 pressed ->
-            HexToASCII $7<<1
-            SET
-            RJMP main
+    C1R4Pressed:
+        ; A pressed ->
+        HexToASCII $A<<1
+        SET
+        RJMP main
 
-        C1R2Pressed:
-            ; 4 pressed ->
-            HexToASCII $4<<1
-            SET
-            RJMP main
+    C2R1Pressed:
+        ; 8 pressed ->
+        HexToASCII $8<<1
+        SET
+        RJMP main
 
-        C1R3Pressed:
-            ; 1 pressed ->
-            HexToASCII $1<<1
-            SET
-            RJMP main
+    C2R2Pressed:
+        ; 5 pressed ->
+        HexToASCII $5<<1
+        SET
+        RJMP main
 
-        C1R4Pressed:
-            ; A pressed ->
-            HexToASCII $A<<1
-            SET
-            RJMP main
+    C2R3Pressed:
+        ; 2 pressed ->
+        HexToASCII $2<<1
+        SET
+        RJMP main
 
-        C2R1Pressed:
-            ; 8 pressed ->
-            HexToASCII $8<<1
-            SET
-            RJMP main
+    C2R4Pressed:
+        ; 0 pressed ->
+        HexToASCII $0<<1
+        SET
+        RJMP main
 
-        C2R2Pressed:
-            ; 5 pressed ->
-            HexToASCII $5<<1
-            SET
-            RJMP main
+    C3R1Pressed:
+        ; 9 pressed ->
+        HexToASCII $9<<1
+        SET
+        RJMP main
 
-        C2R3Pressed:
-            ; 2 pressed ->
-            HexToASCII $2<<1
-            SET
-            RJMP main
+    C3R2Pressed:
+        ; 6 pressed ->
+        HexToASCII $6<<1
+        SET
+        RJMP main
 
-        C2R4Pressed:
-            ; 0 pressed ->
-            HexToASCII $0<<1
-            SET
-            RJMP main
+    C3R3Pressed:
+        ; 3 pressed ->
+        HexToASCII $3<<1
+        SET
+        RJMP main
 
-        C3R1Pressed:
-            ; 9 pressed ->
-            HexToASCII $9<<1
-            SET
-            RJMP main
+    C3R4Pressed:
+        ; B pressed ->
+        HexToASCII $B<<1
+        SET
+        RJMP main
 
-        C3R2Pressed:
-            ; 6 pressed ->
-            HexToASCII $6<<1
-            SET
-            RJMP main
+    C4R1Pressed:
+        ; F pressed ->
+        HexToASCII $F<<1
+        SET
+        RJMP main
 
-        C3R3Pressed:
-            ; 3 pressed ->
-            HexToASCII $3<<1
-            SET
-            RJMP main
+    C4R2Pressed:
+        ; E pressed ->
+        HexToASCII $E<<1
+        SET
+        RJMP main
 
-        C3R4Pressed:
-            ; B pressed ->
-            HexToASCII $B<<1
-            SET
-            RJMP main
+    C4R3Pressed:
+        ; D pressed ->
+        HexToASCII $D<<1
+        SET
+        RJMP main
 
-        C4R1Pressed:
-            ; F pressed ->
-            HexToASCII $F<<1
-            SET
-            RJMP main
-
-        C4R2Pressed:
-            ; E pressed ->
-            HexToASCII $E<<1
-            SET
-            RJMP main
-
-        C4R3Pressed:
-            ; D pressed ->
-            HexToASCII $D<<1
-            SET
-            RJMP main
-
-        C4R4Pressed:
-            ; C pressed ->
-            CBI LED_PORT,LEDUP_P
-            HexToASCII $C<<1
-            SET
-            RJMP main
+    C4R4Pressed:
+        ; C pressed ->
+        CBI LED_PORT,LEDUP_P
+        HexToASCII $C<<1
+        SET
+        RJMP main
 
 
 ; to toggle SCREEN_LE after a certain amount of time
@@ -395,10 +396,8 @@ timer0_ovf:
     ;return
     RETI
 
-
-
 timer2_ovf:
-    ; interruption routine
+    ; interruption routine at 60Hz/line
     PUSH temp ; to keep current value of temp
 
     ; reset timer counter
@@ -444,7 +443,7 @@ timer2_ovf:
     LDI rowselect, 1<<6
     LDI rowoffset, 6
 
-    ; set PB4 HIGH, wait 100 µs
+    ; set PB4 HIGH, wait 100 us
     end:
         SBI SCREEN_PIN,SCREEN_LE ; toggle SCREEN_LE
 
@@ -458,8 +457,6 @@ timer2_ovf:
 
         ;return
         RETI
-
-
 ;-------
 ; TABLE
 ;-------
