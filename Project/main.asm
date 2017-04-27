@@ -73,6 +73,7 @@ Cell: .BYTE 16; ASCII offset by cell
 .MACRO HexToASCII
 SBRS switch, 0
 LDI asciiof, @0<<4
+SBRC switch, 0
 SBR asciiof, @0
 .ENDMACRO
 
@@ -83,6 +84,9 @@ SBR asciiof, @0
     OUT KEYB_PORT,temp
     LDI temp,(1<<COL1)|(1<<COL2)|(1<<COL3)|(1<<COL4)
     OUT KEYB_DDR,temp
+    NOP
+    NOP
+    NOP
     NOP
     NOP
     NOP
@@ -111,8 +115,6 @@ ADC ZH, zero
 LPM temp, Z+            ; store the high part of the adress of the character configuration (columns)
 LPM ZH, Z               ; same with the low part
 MOV ZL, temp
-LSL ZL
-LSL ZH
 ADD ZL, rowoffset       ; to point to the correct column regarding to the row
 ADC ZH, zero
 LPM temp, Z             ; store in temp the column configuration
@@ -240,6 +242,9 @@ main:
     OUT KEYB_PORT,temp
     LDI temp,(1<<ROW1)|(1<<ROW2)|(1<<ROW3)|(1<<ROW4)
     OUT KEYB_DDR,temp
+    NOP
+    NOP
+    NOP
     NOP
     NOP
     NOP
@@ -465,33 +470,135 @@ timer2_ovf:
 ;-------
 
 ASCII:
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw Character0, Character1, Character2, Character3, Character4, Character5, Character6
-    .dw Character7, Character8, Character9
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty
-    .dw CharacterA, CharacterB, CharacterC, CharacterD, CharacterE, CharacterF, CharacterG
-    .dw CharacterH, CharacterI, CharacterJ, CharacterK, CharacterL, CharacterM, CharacterN
-    .dw CharacterO, CharacterP, CharacterQ, CharacterR, CharacterS, CharacterT, CharacterU
-    .dw CharacterV, CharacterW, CharacterX, CharacterY, CharacterZ
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
-    .dw CharacterEmpty, CharacterEmpty, CharacterEmpty
-
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw Character0<<1
+    .dw Character1<<1
+    .dw Character2<<1
+    .dw Character3<<1
+    .dw Character4<<1
+    .dw Character5<<1
+    .dw Character6<<1
+    .dw Character7<<1
+    .dw Character8<<1
+    .dw Character9<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterA<<1
+    .dw CharacterB<<1
+    .dw CharacterC<<1
+    .dw CharacterD<<1
+    .dw CharacterE<<1
+    .dw CharacterF<<1
+    .dw CharacterG<<1
+    .dw CharacterH<<1
+    .dw CharacterI<<1
+    .dw CharacterJ<<1
+    .dw CharacterK<<1
+    .dw CharacterL<<1
+    .dw CharacterM<<1
+    .dw CharacterN<<1
+    .dw CharacterO<<1
+    .dw CharacterP<<1
+    .dw CharacterQ<<1
+    .dw CharacterR<<1
+    .dw CharacterS<<1
+    .dw CharacterT<<1
+    .dw CharacterU<<1
+    .dw CharacterV<<1
+    .dw CharacterW<<1
+    .dw CharacterX<<1
+    .dw CharacterY<<1
+    .dw CharacterZ<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
+    .dw CharacterEmpty<<1
 
 CharacterEmpty:
     .db 0, 0, 0, 0, 0, 0, 0, 0
@@ -521,10 +628,10 @@ CharacterH:
     .db 0b1001, 0b1001, 0b1001, 0b1111, 0b1001, 0b1001, 0b1001, 0
 
 CharacterI:
-    .db 0b11111, 0b0100, 0b0100, 0b0100, 0b0100, 0b0100, 0b11111, 0
+    .db 0b01110, 0b0100, 0b0100, 0b0100, 0b0100, 0b0100, 0b01110, 0
 
 CharacterJ:
-    .db 0b1111, 0b0010, 0b0010, 0b0010, 0b0010, 0b0010, 0b1110, 0
+    .db 0b1111, 0b0001, 0b0001, 0b0001, 0b0001, 0b1001, 0b0110, 0
 
 CharacterK:
     .db 0b1001, 0b1010, 0b1100, 0b1000, 0b1100, 0b1010, 0b1001, 0
@@ -533,7 +640,7 @@ CharacterL:
     .db 0b1000, 0b1000, 0b1000, 0b1000, 0b1000, 0b1000, 0b1111, 0
 
 CharacterM:
-    .db 0b1001, 0b1111, 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0
+    .db 0b1001, 0b1111, 0b1111, 0b1001, 0b1001, 0b1001, 0b1001, 0
 
 CharacterN:
     .db 0b1001, 0b1101, 0b1011, 0b1001, 0b1001, 0b1001, 0b1001, 0
@@ -545,13 +652,13 @@ CharacterP:
     .db 0b1111, 0b1001, 0b1001, 0b1111, 0b1000, 0b1000, 0b1000, 0
 
 CharacterQ:
-    .db 0b0110, 0b1001, 0b1001, 0b1001, 0b1111, 0b1011, 0b1001, 0
+    .db 0b0110, 0b1001, 0b1001, 0b1001, 0b0111, 0b0010, 0b0001, 0
 
 CharacterR:
     .db 0b1111, 0b1001, 0b1001, 0b1111, 0b1100, 0b1010, 0b1001, 0
 
 CharacterS:
-    .db 0b0111, 0b1000, 0b1000, 0b0110, 0b0001, 0b0001, 0b0111, 0
+    .db 0b0111, 0b1000, 0b1000, 0b0110, 0b0001, 0b0001, 0b1110, 0
 
 CharacterT:
     .db 0b11111, 0b0100, 0b0100, 0b0100, 0b0100, 0b0100, 0b0100, 0
@@ -563,13 +670,13 @@ CharacterV:
     .db 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b0110, 0
 
 CharacterW:
-    .db 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b1111, 0b1001, 0
+    .db 0b1001, 0b1001, 0b1001, 0b1001, 0b1111, 0b1111, 0b1001, 0
 
 CharacterX:
     .db 0b1001, 0b1001, 0b1001, 0b0110, 0b1001, 0b1001, 0b1001, 0
 
 CharacterY:
-    .db 0b1001, 0b1001, 0b1001, 0b1111, 0b0010, 0b0100, 0b1000, 0
+    .db 0b1001, 0b1001, 0b1001, 0b0111, 0b0010, 0b0100, 0b1000, 0
 
 CharacterZ:
     .db 0b1111, 0b0001, 0b0001, 0b0110, 0b1000, 0b1000, 0b1111, 0
