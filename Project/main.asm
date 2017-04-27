@@ -101,15 +101,18 @@ SBR asciiof, @0
 ; Write column patterns in shift register (display)
 .MACRO writeColumns
 MOVW ZL,XL              ; XL, XH → ZL, ZH, Cell table adress
-ADIW ZL, @0             ; to point to the correct cell
-LPM temp, Z             ; store in temp ASCII offset
+ADIW ZL, @0            ; to point to the correct cell
+LD temp, Z            	; store in temp ASCII offset
 LDI ZH, high(ASCII<<1)  ;  ASCII table adress
 LDI ZL, low(ASCII<<1)
+LSL temp
 ADD ZL, temp            ; to point to the correct ASCII character
 ADC ZH, zero
 LPM temp, Z+            ; store the high part of the adress of the character configuration (columns)
-LPM ZL, Z               ; same with the low part
-MOV ZH, temp            
+LPM ZH, Z               ; same with the low part
+MOV ZL, temp
+LSL ZL
+LSL ZH
 ADD ZL, rowoffset       ; to point to the correct column regarding to the row
 ADC ZH, zero
 LPM temp, Z             ; store in temp the column configuration
@@ -277,98 +280,98 @@ main:
 
     C1R1Pressed:
         ; 7 pressed ->
-        HexToASCII $7<<1
+        HexToASCII $7
         SET
         RJMP main
 
     C1R2Pressed:
         ; 4 pressed ->
-        HexToASCII $4<<1
+        HexToASCII $4
         SET
         RJMP main
 
     C1R3Pressed:
         ; 1 pressed ->
-        HexToASCII $1<<1
+        HexToASCII $1
         SET
         RJMP main
 
     C1R4Pressed:
         ; A pressed ->
-        HexToASCII $A<<1
+        HexToASCII $A
         SET
         RJMP main
 
     C2R1Pressed:
         ; 8 pressed ->
-        HexToASCII $8<<1
+        HexToASCII $8
         SET
         RJMP main
 
     C2R2Pressed:
         ; 5 pressed ->
-        HexToASCII $5<<1
+        HexToASCII $5
         SET
         RJMP main
 
     C2R3Pressed:
         ; 2 pressed ->
-        HexToASCII $2<<1
+        HexToASCII $2
         SET
         RJMP main
 
     C2R4Pressed:
         ; 0 pressed ->
-        HexToASCII $0<<1
+        HexToASCII $0
         SET
         RJMP main
 
     C3R1Pressed:
         ; 9 pressed ->
-        HexToASCII $9<<1
+        HexToASCII $9
         SET
         RJMP main
 
     C3R2Pressed:
         ; 6 pressed ->
-        HexToASCII $6<<1
+        HexToASCII $6
         SET
         RJMP main
 
     C3R3Pressed:
         ; 3 pressed ->
-        HexToASCII $3<<1
+        HexToASCII $3
         SET
         RJMP main
 
     C3R4Pressed:
         ; B pressed ->
-        HexToASCII $B<<1
+        HexToASCII $B
         SET
         RJMP main
 
     C4R1Pressed:
         ; F pressed ->
-        HexToASCII $F<<1
+        HexToASCII $F
         SET
         RJMP main
 
     C4R2Pressed:
         ; E pressed ->
-        HexToASCII $E<<1
+        HexToASCII $E
         SET
         RJMP main
 
     C4R3Pressed:
         ; D pressed ->
-        HexToASCII $D<<1
+        HexToASCII $D
         SET
         RJMP main
 
     C4R4Pressed:
         ; C pressed ->
         CBI LED_PORT,LEDUP_P
-        HexToASCII $C<<1
+        HexToASCII $C
         SET
         RJMP main
 
