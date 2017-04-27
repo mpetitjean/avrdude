@@ -46,23 +46,21 @@
 .EQU TCNT2_RESET_480    = 223
 .EQU TCNT0_RESET_1M     = 255
 
-;Define some Register name
-.DEF zero       = r0    ; just a 0
-.DEF switch     = r1    ; to alternate low and high part of byte (for keyboard)
-.DEF temp       = r16   ; register for temp. value
-.DEF rowselect  = r21   ; to know the row to switch on
-.DEF rowoffset  = r22   ; select the column corresponding to the right row
-.DEF asciiof    = r17   ; to store the offset for ASCII table
+;Define some Rd name
+.DEF zero       = r0
+.DEF switch     = r1
+.DEF temp       = r16
+.DEF rowselect  = r21
+.DEF rowoffset  = r22
+.DEF asciiof    = r17
 
 ;Memory
 .DSEG
-Cell: .BYTE 16; ASCII offset by cell
+Cell: .BYTE 16; LED cell
 .CSEG
 ;--------
 ; MACROS
 ;--------
-
-; for shift register (display)
 .MACRO shiftReg
     SBI SCREEN_PORT, SCREEN_SDI
     SBRS @0, @1
@@ -71,14 +69,12 @@ Cell: .BYTE 16; ASCII offset by cell
     SBI SCREEN_PIN,SCREEN_CLK
 .ENDMACRO
 
-;to store part of ASCII ofset in low or high part of asciiof register, if switch(0) = 1 → low part, else high
 .MACRO HexToASCII
 SBRS switch, 0
 LDI asciiof, @0<<4
 SBR asciiof, @0
 .ENDMACRO
 
-; To detect key pressed from keyboard
 .MACRO keyboardStep2
     ; switch in/out for rows and columns
     LDI temp,(1<<ROW1)|(1<<ROW2)|(1<<ROW3)|(1<<ROW4)
@@ -100,23 +96,22 @@ SBR asciiof, @0
     RJMP reset
 .ENDMACRO
 
-; Write column patterns in shift register (display)
 .MACRO writeColumns
-MOVW ZL,XL              ; XL, XH → ZL, ZH, Cell table adress
-ADIW ZL, @0             ; to point to the correct cell
-LPM temp, Z             ; store in temp ASCII offset
-LDI ZH, high(ASCII<<1)  ;  ASCII table adress
-LDI ZL, low(ASCII<<1)
-ADD ZL, temp            ; to point to the correct ASCII character
+MOVW ZL,XL
+ADIW ZL, @0
+LPM temp, Z
+LDI ZH, high(ASCII)
+LDI ZL, low(ASCII)
+ADD ZL, temp
 ADC ZH, zero
-LPM temp, Z+            ; store the high part of the adress of the character configuration (columns)
-LPM ZL, Z               ; same with the low part
-MOV ZH, temp            
-ADD ZL, rowoffset       ; to point to the correct column regarding to the row
+LPM temp, Z+
+LPM ZL, Z
+MOV ZH, temp
+ADD ZL, rowoffset
 ADC ZH, zero
-LPM temp, Z             ; store in temp the column configuration
+LPM temp, Z
 
-shiftReg temp, 0        ; write in shift register (display) the column configuration for that cell
+shiftReg temp, 0
 shiftReg temp, 1
 shiftReg temp, 2
 shiftReg temp, 3
@@ -149,17 +144,14 @@ init:
     SBI LED_PORT,LEDUP_P
     SBI LED_PORT,LEDDOWN_P
 
-    ;Clear Register
+    ;Clear Mem
     CLR zero
     CLR switch
-
-    ; Store Cell table adress in X and Y, Y will be use to point to the next cell we need to configure, X will store the adress of the Cell table
     LDI YH, high(Cell)
     LDI YL, low(Cell)
     LDI XH, high(Cell)
     LDI XL, low(Cell)
 
-    ; Clear Memory
     ST Y, zero
     STD Y+1, zero
     STD Y+2, zero
@@ -219,18 +211,13 @@ init:
     LDI rowoffset, 6
     LDI rowselect, 1<<6
 
-    ; activate timer interrupt
     SEI
 
-    ; clear T register
     CLT
-
     RJMP main
 
 
 main:
-
-
     ; Check if all COL are HIGH
         ; First set all rows to LOW as output and cols as inputs
         LDI temp,(1<<COL1)|(1<<COL2)|(1<<COL3)|(1<<COL4)
@@ -254,11 +241,12 @@ main:
         reset:
             SBI LED_PORT,LEDUP_P
             SBI LED_PORT,LEDDOWN_P
-            BRTC main               ; if T = 0 → no key pressed → jump to main
-            INC switch              ; if T = 1 → key pressed → increment the swicht (select if low or high part of a byte)
-            CLT                     ; clear T
-            SBRS switch, 0          ; skip if switch(0) = 1 (meaning that we only have written the high part of the ASCII offset)
-            ST Y+, asciiof          ; if ASCCI offset written → store it in the correct part of the cell table
+            BRTC main
+            INC switch
+            CLT
+            SBRS switch, 0
+
+            ST Y+, asciiof
             RJMP main
 
 
@@ -282,7 +270,7 @@ main:
 
         C1R2Pressed:
             ; 4 pressed ->
-            HexToASCII $4<<1
+            HexToASCII $7<<1
             SET
             RJMP main
 
@@ -372,40 +360,29 @@ main:
             RJMP main
 
 
-; to toggle SCREEN_LE after a certain amount of time
-timer0_ovf:
-    PUSH temp ; to keep current value of temp
 
-    ; reset the timer counter
+timer0_ovf:
+    PUSH temp
     LDI temp,TCNT0_RESET_1M
     STS TCNT0,temp
 
-    ; toggle SCREEN_LE
     SBI SCREEN_PIN,SCREEN_LE
 
-    ; stop the timer
     LDS temp,TCCR0B
     CBR temp,(1<<WGM02)
     CBR temp,(1<<CS02)|(1<<CS01)|(1<<CS00)
     STS TCCR0B,temp
-
-    ; retreive temp value
     POP temp
 
-    ;return
     RETI
 
 
 
 timer2_ovf:
     ; interruption routine
-    PUSH temp ; to keep current value of temp
-
-    ; reset timer counter
+    PUSH temp
     LDI temp,TCNT2_RESET_480
     STS TCNT2,temp
-
-    ; write column configurations of each cell
     writeColumns 15
     writeColumns 14
     writeColumns 13
@@ -423,12 +400,10 @@ timer2_ovf:
     writeColumns 1
     writeColumns 0
 
-    ; useless row
     CBI SCREEN_PORT,SCREEN_SDI
     SBI SCREEN_PIN,SCREEN_CLK
     SBI SCREEN_PIN,SCREEN_CLK
 
-    ; write row configuration (switch on a row)
     shiftReg rowselect, 6
     shiftReg rowselect, 5
     shiftReg rowselect, 4
@@ -436,33 +411,20 @@ timer2_ovf:
     shiftReg rowselect, 2
     shiftReg rowselect, 1
     shiftReg rowselect, 0
-
-    ; prepare for the next iteration (upper row)
     DEC rowoffset
     LSR rowselect
-    BRNE end        ; if we did all the rows → jump to the bottom (row)
+    BRNE end
     LDI rowselect, 1<<6
     LDI rowoffset, 6
-
     ; set PB4 HIGH, wait 100 µs
     end:
-        SBI SCREEN_PIN,SCREEN_LE ; toggle SCREEN_LE
-
-        ; switch on the other timer
+        SBI SCREEN_PIN,SCREEN_LE
         LDS temp,TCCR2B
         SBR temp,(1<<CS02)|(1<<CS01)|(1<<CS00)
         STS TCCR0B,temp
-
-        ;retreive the temp value
         POP temp
-
-        ;return
         RETI
 
-
-;-------
-; TABLE
-;-------
 
 ASCII:
     .dw CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty, CharacterEmpty
