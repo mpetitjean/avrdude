@@ -88,18 +88,33 @@ SBR asciiof, @0
 .ENDMACRO
 
 ; To detect key pressed from keyboard (step 2 of two-steps method)
+.MACRO Loop
+CLR temp
+begin@0:
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    NOP
+    DEC temp
+    BRNE begin@0
+.ENDMACRO
 .MACRO keyboardStep2
     ; switch in/out for rows and columns
     LDI temp,(1<<ROW1)|(1<<ROW2)|(1<<ROW3)|(1<<ROW4)
     OUT KEYB_PORT,temp
     LDI temp,(1<<COL1)|(1<<COL2)|(1<<COL3)|(1<<COL4)
     OUT KEYB_DDR,temp
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
+    Loop key2
     ; check which row is LOW
     SBIS KEYB_PIN,ROW1
     RJMP @0
@@ -265,12 +280,7 @@ main:
     OUT KEYB_PORT,temp
     LDI temp,(1<<ROW1)|(1<<ROW2)|(1<<ROW3)|(1<<ROW4)
     OUT KEYB_DDR,temp
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
+    Loop key1
     ; COLx is LOW => check for the rows (step2)
     SBIS KEYB_PIN,COL1
     RJMP C1Pressed
