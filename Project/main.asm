@@ -31,6 +31,12 @@
 .equ LED_PORT   = PORTC
 .equ LED_PIN    = PINC
 
+;SWITCH
+.equ SWITCH_DDR	= DDRB
+.equ SWITCH_PORT= PORTB
+.equ SWITCH_PIN	= PINB
+.equ SWITCH_P	= 0
+
 ;SCREEN
 .equ SCREEN_DDR     = DDRB
 .equ SCREEN_PORT    = PORTB
@@ -40,12 +46,16 @@
 .equ SCREEN_LE      = 4
 
 ;TCNT 1 RESET VALUE
-.EQU TCNT2_RESET_480    = 223
-.EQU TCNT0_RESET_1M     = 255
+.EQU TCNT2_RESET_480    = 245
+.EQU TCNT0_RESET_1M     = 55
 
 ;Define some Register name
 .DEF zero       = r0    ; just a 0
 .DEF switch     = r1    ; to alternate low and high part of byte (for keyboard)
+.DEF cleareg  	= r2
+.DEF eof		= r3
+.DEF stepreg	= r4
+.DEF finish     = r5
 .DEF temp       = r16   ; register for temp. value
 .DEF rowselect  = r21   ; to know the row to switch on
 .DEF rowoffset  = r22   ; select the column corresponding to the right row
@@ -152,9 +162,25 @@ init:
     SBI LED_PORT,LEDUP_P
     SBI LED_PORT,LEDDOWN_P
 
+    ; configure switch as output
+    CBI SWITCH_DDR, SWITCH_P
+    SBI SWITCH_PORT, SWITCH_P
+
     ;Clear Register
     CLR zero
     CLR switch
+    CLR stepreg
+    
+    CLR finish
+    INC finish
+    ; Reg constant values
+    LDI rowoffset, 6
+    LDI rowselect, 1<<6
+    LDI temp, 8
+    MOV cleareg, temp
+    LDI temp, 3
+    MOV eof, temp
+
 
     ; Store Cell table adress in X and Y, Y will be used to point to the next cell we need to configure
     ; X will store the adress of the Cell table
@@ -164,22 +190,23 @@ init:
     LDI XL, low(Cell)
 
     ; Clear Memory
-    ST Y, zero
-    STD Y+1, zero
-    STD Y+2, zero
-    STD Y+3, zero
-    STD Y+4, zero
-    STD Y+5, zero
-    STD Y+6, zero
-    STD Y+7, zero
-    STD Y+8, zero
-    STD Y+9, zero
-    STD Y+10, zero
-    STD Y+11, zero
-    STD Y+12, zero
-    STD Y+13, zero
-    STD Y+14, zero
-    STD Y+15, zero
+    LDI temp, 32
+    ST Y, temp
+    STD Y+1, temp
+    STD Y+2, temp
+    STD Y+3, temp
+    STD Y+4, temp
+    STD Y+5, temp
+    STD Y+6, temp
+    STD Y+7, temp
+    STD Y+8, temp
+    STD Y+9, temp
+    STD Y+10, temp
+    STD Y+11, temp
+    STD Y+12, temp
+    STD Y+13, temp
+    STD Y+14, temp
+    STD Y+15, temp
 
     ; TIMER 1 - each line needs to be refreshed at 60Hz
     ; configure timer 1 in normal mode (count clk signals)
@@ -219,11 +246,6 @@ init:
     SBR temp,(1<<TOIE0)
     STS TIMSK0,temp
 
-
-    ;Row offset + Row select
-    LDI rowoffset, 6
-    LDI rowselect, 1<<6
-
     ; activate timer interrupt
     SEI
 
@@ -238,7 +260,8 @@ main:
 	; STEP 1 of Keyboard check
 	; Check if all COL are HIGH
     ; First set all rows to LOW as output and cols as inputs
-    LDI temp,(1<<COL1)|(1<<COL2)|(1<<COL3)|(1<<COL4)
+
+    keyboard: LDI temp,(1<<COL1)|(1<<COL2)|(1<<COL3)|(1<<COL4)
     OUT KEYB_PORT,temp
     LDI temp,(1<<ROW1)|(1<<ROW2)|(1<<ROW3)|(1<<ROW4)
     OUT KEYB_DDR,temp
@@ -261,12 +284,31 @@ main:
 
     reset:
     	; no COL is detected to be pressed, rows are not checked
-        SBI LED_PORT,LEDUP_P
-        SBI LED_PORT,LEDDOWN_P
         BRTC main               ; if T = 0 → no key pressed → jump to main
         INC switch              ; if T = 1 → key pressed → increment the switch(select if low or high part of a byte)
+        SBI LED_PIN,LEDUP_P
         CLT                     ; clear T
-        SBRS switch, 0          ; skip if switch(0) = 1 (meaning that we only have written the high part of the ASCII offset)
+        CPSE eof, asciiof
+        RJMP pwdencode
+        INC stepreg
+        MOVW YL, XL
+        RJMP main
+
+        pwdencode: SBRS stepreg, 0 ; skip if not in passsword encoding
+        RJMP clear
+        SBRC switch, 0
+        RJMP main
+        LD temp, Y ; Load current offset
+        EOR asciiof, temp
+        ST Y+, asciiof
+        RJMP main
+
+        clear: CPSE cleareg, asciiof
+        RJMP messagein
+        ST -Y, asciiof
+        RJMP main
+
+        messagein: SBRS switch, 0          ; skip if switch(0) = 1 (meaning that we only have written the high part of the ASCII offset)
         ST Y+, asciiof          ; if ASCCI offset written → store it in the correct part of the cell table
         RJMP main
 
@@ -375,7 +417,6 @@ main:
 
     C4R4Pressed:
         ; C pressed ->
-        CBI LED_PORT,LEDUP_P
         HexToASCII $C
         SET
         RJMP main
@@ -383,7 +424,7 @@ main:
 
 ; to toggle SCREEN_LE after a certain amount of time
 timer0_ovf:
-    PUSH temp ; to keep current value of temp
+	PUSH temp ; to keep current value of temp
 
     ; reset the timer counter
     LDI temp,TCNT0_RESET_1M
@@ -400,7 +441,6 @@ timer0_ovf:
 
     ; retreive temp value
     POP temp
-
     ;return
     RETI
 
@@ -456,12 +496,14 @@ timer2_ovf:
         SBI SCREEN_PIN,SCREEN_LE ; toggle SCREEN_LE
 
         ; switch on the other timer
-        LDS temp,TCCR2B
-        SBR temp,(1<<CS02)|(1<<CS01)|(1<<CS00)
+        LDS temp,TCCR0B
+        ;SBR temp,(1<<CS02)|(1<<CS01)|(1<<CS00)
+        SBR temp,(1<<CS01)
         STS TCCR0B,temp
 
         ;retreive the temp value
         POP temp
+    
 
         ;return
         RETI
@@ -478,6 +520,7 @@ ASCII:
     .dw CharacterEmpty<<1
     .dw CharacterEmpty<<1
     .dw CharacterEmpty<<1
+    .dw CharacterSpace<<1
     .dw CharacterEmpty<<1
     .dw CharacterEmpty<<1
     .dw CharacterEmpty<<1
@@ -501,23 +544,22 @@ ASCII:
     .dw CharacterEmpty<<1
     .dw CharacterEmpty<<1
     .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
+    .dw CharacterSpace<<1
+    .dw CharacterExclam<<1
+    .dw CharacterQuote<<1
+    .dw CharacterHash<<1
+    .dw CharacterDollar<<1
+    .dw CharacterPercent<<1
+    .dw CharacterAnd<<1
+    .dw CharacterPrime<<1
+    .dw CharacterParLeft<<1
+    .dw CharacterParRight<<1
+    .dw CharacterStar<<1
+    .dw CharacterPlus<<1
+    .dw CharacterComma<<1
+    .dw CharacterLine<<1
+    .dw CharacterDot<<1
+    .dw CharacterSlash<<1
     .dw Character0<<1
     .dw Character1<<1
     .dw Character2<<1
@@ -601,7 +643,55 @@ ASCII:
     .dw CharacterEmpty<<1
 
 CharacterEmpty:
+    .db 0, 0, 0, 0b100, 0, 0, 0, 0
+
+CharacterSpace:
     .db 0, 0, 0, 0, 0, 0, 0, 0
+
+CharacterExclam:
+	.db 0b100, 0b100, 0b100, 0b100, 0b100, 0, 0b100, 0
+
+CharacterQuote:
+	.db 0, 0b01010, 0b01010, 0, 0, 0, 0, 0
+
+CharacterHash:
+	.db 0, 0b01010, 0b11111, 0b01010, 0b11111, 0b01010, 0, 0
+
+CharacterDollar:
+	.db 0b0111, 0b1100, 0b1100, 0b0110, 0b0101, 0b0101, 0b1110, 0
+
+CharacterPercent:
+	.db 0b11000, 0b11001, 0b00010, 0b00100, 0b01000, 0b10011, 0b11, 0
+
+CharacterAnd:
+	.db 0b110, 0b1001, 0b1010, 0b100, 0b1010, 0b1001, 0b0100, 0
+
+CharacterPrime:
+	.db 0, 0b00100, 0b00100, 0, 0, 0, 0, 0
+
+CharacterParLeft:
+	.db 0b00100, 0b1000, 0b1000, 0b1000, 0b1000, 0b1000, 0b100, 0
+
+CharacterParRight:
+	.db 0b00100, 0b10, 0b10, 0b10, 0b10, 0b10, 0b100, 0
+
+CharacterStar:
+	.db 0b100, 0b100, 0b11111, 0b100, 0b1010, 0b10001, 0, 0
+
+CharacterPlus:
+	.db 0, 0b100, 0b100, 0b11111, 0b100, 0b100, 0, 0
+
+CharacterComma:
+	.db 0, 0, 0, 0, 0b100, 0b100, 0b1000, 0
+
+CharacterLine:
+	.db 0, 0, 0, 0b1110, 0, 0, 0, 0
+
+CharacterDot:
+	.db 0, 0, 0, 0, 0, 0, 0b100, 0
+
+CharacterSlash:
+	.db 0, 1, 2, 4, 8, 16, 0, 0
 
 CharacterA:
     .db 0b0110, 0b1001, 0b1001, 0b1001, 0b1111, 0b1001, 0b1001, 0
