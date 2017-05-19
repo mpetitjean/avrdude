@@ -31,12 +31,6 @@
 .equ LED_PORT	= PORTC
 .equ LED_PIN	= PINC
 
-;SWITCH
-.equ SWITCH_DDR	= DDRB
-.equ SWITCH_PORT= PORTB
-.equ SWITCH_PIN	= PINB
-.equ SWITCH_P	= 0
-
 ;Joystick
 .equ JOYSTICK_DDR 	= DDRB
 .equ JOYSTICK_PORT	= PORTB
@@ -56,16 +50,18 @@
 .EQU TCNT0_RESET_1M     = 55
 
 ;Define some Register name
-.DEF zero       = r0    ; just a 0
-.DEF switch     = r1    ; to alternate low and high part of byte (for keyboard)
-.DEF cleareg  	= r2
-.DEF eof		= r3
-.DEF stepreg	= r18
-.DEF state      = r19
-.DEF temp       = r16   ; register for temp. value
-.DEF asciiof    = r17   ; to store the offset for ASCII table
-.DEF rowselect  = r21   ; to know the row to switch on
-.DEF rowoffset  = r22   ; select the column corresponding to the right row
+.DEF zero       = r0    ; Just a 0
+.DEF switch     = r1    ; To alternate low and high part of byte (for keyboard)
+.DEF cleareg  	= r2 	; Value offset to space ASCII character 
+.DEF eof		= r3 	; Value offset to EOF ASCII character
+.DEF pushapop	= r4 	; Push and Pop register (avoid to access RAM)
+.DEF temp       = r16   ; Register for temp value
+.DEF asciiof    = r17   ; To store the offset for ASCII table
+.DEF stepreg	= r18 	; Write or XOR (0 = Write)
+.DEF state      = r19 	; Encryption or Decryption (0 = Encryption)
+.DEF stateJoy	= r20 	; Joystick pressed or not (0 = Pressed)
+.DEF rowselect  = r21   ; Know the row to switch on
+.DEF rowoffset  = r22   ; Select the column corresponding to the right row
 
 ;Memory
 .DSEG
@@ -75,23 +71,25 @@ Cell: .BYTE 16; ASCII offset/cell
 ;--------
 ; MACROS
 ;--------
-.MACRO shiftReg
+
+; Fill in the shift register for screen
+.MACRO shiftReg 
 	SBI SCREEN_PORT, SCREEN_SDI
-	SBRS @0, @1
+	SBRS @0, @1			    		; Set to 0 if needed
 	CBI SCREEN_PORT, SCREEN_SDI
-	SBI SCREEN_PIN,SCREEN_CLK
+	SBI SCREEN_PIN,SCREEN_CLK   	; Push value
 	SBI SCREEN_PIN,SCREEN_CLK
 .ENDMACRO
 
-;to store part of ASCII ofset in low or high part of asciiof register, if switch(0) = 1 → low part, else high
+; Store part of ASCII offset in low or high part of asciiof register
+; if switch(0) = 1 → low part, else high
 .MACRO HexToASCII
+SBR asciiof, @0
 SBRS switch, 0
 LDI asciiof, @0<<4
-SBRC switch, 0
-SBR asciiof, @0
 .ENDMACRO
 
-; To detect key pressed from keyboard (step 2 of two-steps method)
+; Wait
 .MACRO Loop
 CLR temp
 begin@0:
@@ -109,17 +107,22 @@ begin@0:
     NOP
     NOP
     NOP
+    NOP
+    NOP
+    NOP
     DEC temp
     BRNE begin@0
 .ENDMACRO
+
+; Detect key pressed from keyboard (step 2 of two-steps method)
 .MACRO keyboardStep2
-    ; switch in/out for rows and columns
+    ; Switch in/out for rows and columns
     LDI temp,(1<<ROW1)|(1<<ROW2)|(1<<ROW3)|(1<<ROW4)
     OUT KEYB_PORT,temp
     LDI temp,(1<<COL1)|(1<<COL2)|(1<<COL3)|(1<<COL4)
     OUT KEYB_DDR,temp
     Loop key2
-    ; check which row is LOW
+    ; Check which row is LOW
     SBIS KEYB_PIN,ROW1
     RJMP @0
     SBIS KEYB_PIN,ROW2
@@ -131,23 +134,25 @@ begin@0:
     RJMP reset
 .ENDMACRO
 
+; Write one column configuration of one cell
 .MACRO writeColumns
-MOVW ZL,XL              ; XL, XH → ZL, ZH, Cell table adress
-ADIW ZL, @0            ; to point to the correct cell
-LD temp, Z            	; store in temp ASCII offset
-LDI ZH, high(ASCII<<1)  ;  ASCII table adress
+LDI ZL, low(Cell)
+LDI ZH, high(Cell)     
+ADIW ZL, @0             ; Point to the correct cell
+LD temp, Z            	; Store in temp ASCII offset
+LDI ZH, high(ASCII<<1)  ; ASCII table adress
 LDI ZL, low(ASCII<<1)
 LSL temp
-ADD ZL, temp            ; to point to the correct ASCII character
+ADD ZL, temp            ; Point to the correct ASCII character
 ADC ZH, zero
-LPM temp, Z+            ; store the high part of the adress of the character configuration (columns)
-LPM ZH, Z               ; same with the low part
+LPM temp, Z+            ; Store the high part of the adress of the character configuration (columns)
+LPM ZH, Z               ; Same with the low part
 MOV ZL, temp
-ADD ZL, rowoffset       ; to point to the correct column regarding to the row
+ADD ZL, rowoffset       ; Point to the correct column regarding to the row
 ADC ZH, zero
-LPM temp, Z             ; store in temp the column configuration
+LPM temp, Z             ; Store in temp the column configuration
 
-shiftReg temp, 0        ; write in shift register (display) the column configuration for that cell
+shiftReg temp, 0        ; Write in shift register (display) the column configuration for that cell
 shiftReg temp, 1
 shiftReg temp, 2
 shiftReg temp, 3
@@ -161,56 +166,47 @@ shiftReg temp, 4
 .ORG 0x0000
 rjmp init
 
-.ORG 0x0010
-rjmp timer0_ovf
-
 .ORG 0x0012
 rjmp timer2_ovf
 
 init:
-    ; Set PB3,4,5 as output
-    ; Set them at LOW
-    LDI temp, (1<<3)|(1<<4)|(1<<5)
+
+	; Screen configuration
+    ; Set SDI, CLK, LE as output - set them at LOW
+    LDI temp, (1<<SCREEN_SDI)|(1<<SCREEN_CLK)|(1<<SCREEN_LE)
     OUT SCREEN_PORT, temp
     OUT SCREEN_DDR, temp
 
-    ; configure LEDs as outputs - set to HIGH to be off
+    ; Configure LEDs as outputs - set to HIGH to be off
     SBI LED_DDR,LEDUP_P
     SBI LED_DDR,LEDDOWN_P
     SBI LED_PORT,LEDUP_P
     SBI LED_PORT,LEDDOWN_P
 
-    ; configure switch as input
-    ;CBI SWITCH_DDR, SWITCH_P
-    ;SBI SWITCH_PORT, SWITCH_P
-
-    ; configure R3
+    ; Configure joystick stick
     CBI JOYSTICK_DDR,JOYSTICK_P
     SBI JOYSTICK_PORT,JOYSTICK_P
 
-    ;Clear Register
+    ; Clear useful registers
     CLR zero
     CLR switch
     CLR stepreg
     CLR state
-
-    ; Reg constant values
-    LDI rowoffset, 6
-    LDI rowselect, 1<<6
+    
+    ; Reg initial values
+    LDI rowoffset, 6			; Number of rows
+    LDI rowselect, 1<<6 		; Selection of the first row
     LDI temp, 8
-    MOV cleareg, temp
+    MOV cleareg, temp 			; Offset to blank space
     LDI temp, 3
-    MOV eof, temp
+    MOV eof, temp 				; Offset to EOF
+    LDI stateJoy, 1 			; Joystick not pressed
 
-
-    ; Store Cell table adress in X and Y, Y will be used to point to the next cell we need to configure
-    ; X will store the adress of the Cell table
+    ; Store Cell table adress in Y, point to the next cell we need to configure
     LDI YH, high(Cell)
     LDI YL, low(Cell)
-    LDI XH, high(Cell)
-    LDI XL, low(Cell)
 
-    ; Clear Memory
+    ; Clear Screen (put spaces everywhere)
     LDI temp, 32
     ST Y, temp
     STD Y+1, temp
@@ -229,10 +225,9 @@ init:
     STD Y+14, temp
     STD Y+15, temp
 
-    ; TIMER 1 - each line needs to be refreshed at 60Hz
-    ; configure timer 1 in normal mode (count clk signals)
+    ; TIMER 2 - each line needs to be refreshed at 60Hz
+    ; configure timer 2 in normal mode (count clk signals)
     ; WGM20 = 0   WGM21 = 0
-    ; p155 datasheet
     LDS temp,TCCR2A
     CBR temp,(1<<WGM20)|(1<<WGM21)
     STS TCCR2A,temp
@@ -244,78 +239,72 @@ init:
     SBR temp,(1<<CS22)|(1<<CS21)|(1<<CS20)
     STS TCCR2B,temp
 
-    ; activate overflow interrupt timer 1
+    ; activate overflow interrupt timer 2
     ; set TOIE12
     LDS temp,TIMSK2
     SBR temp,(1<<TOIE2)
     STS TIMSK2,temp
 
-    ; TIMER 0 - counts the 100 us to activate display when needed (disabled at init)
-    ; configure timer0 in normal mode
-    LDS temp,TCCR0A
-    CBR temp,(1<<WGM00)|(1<<WGM01)
-    STS TCCR0A,temp
-
-    ; set prescaler to 0 (disable) timer0
-    LDS temp,TCCR0B
-    CBR temp,(1<<WGM02)
-    CBR temp,(1<<CS02)|(1<<CS01)|(1<<CS00)
-    STS TCCR0B,temp
-
-    ; activate overflow interrupt timer 0
-    LDS temp,TIMSK0
-    SBR temp,(1<<TOIE0)
-    STS TIMSK0,temp
-
-    ; activate timer interrupt
-    SEI
+    ; Activate global interrupt
+ 	SEI
 
     ; clear T register
     CLT
 
     RJMP main
 
-
 main:
-	
+	; Check state of the joystick
 	IN temp, JOYSTICK_PIN
+	; If pressed, bit is cleared → skip
 	SBRS temp, JOYSTICK_P
 	RJMP pressed
-	CBI LED_PORT,LEDDOWN_P
+	; Skip if coming from pressed state
+	CPSE stateJoy, zero
 	RJMP keyboard
+	LDI stateJoy, 1
+	; Skip if coming from encryption
+	CPSE state, zero
+	RJMP bigclear
+	; Point to the first cell
+	LDI YL, low(Cell)
+	LDI YH, high(Cell)
+	; Set to XOR and decryption state
+	LDI stepreg, 1
+	LDI state,1
+	; Turn on the LED (PC3)
+	CBI LED_PORT,LEDDOWN_P
+	
+	; 
+	RJMP keyboard
+	bigclear: 
+	LDI YL, low(Cell)
+	LDI YH, high(Cell)
+	LDI temp, 32
+    ST Y, temp
+    STD Y+1, temp
+    STD Y+2, temp
+    STD Y+3, temp
+    STD Y+4, temp
+    STD Y+5, temp
+    STD Y+6, temp
+    STD Y+7, temp
+    STD Y+8, temp
+    STD Y+9, temp
+    STD Y+10, temp
+    STD Y+11, temp
+    STD Y+12, temp
+    STD Y+13, temp
+    STD Y+14, temp
+    STD Y+15, temp
+    LDI stepreg, 0
+    LDI state, 0
+    RJMP keyboard
 	pressed:
+	LDI stateJoy, 0
 	SBI LED_PORT,LEDDOWN_P
-	;SBRC state,0
-	;RJMP keyboard
-	;MOVW YL, XL
-	;LDI stepreg,1
-	;LDI state,1
-	;RJMP keyboard
-
-		
-	;SBRS state,0
-	;RJMP keyboard
-	;LDI state,0
-	;LDI stepreg,0
-	;;MOVW YL, XL
-	;LDI temp, 32
-    ;ST Y, temp
-    ;STD Y+1, temp
-    ;STD Y+2, temp
-    ;STD Y+3, temp
-    ;STD Y+4, temp
-    ;STD Y+5, temp
-    ;STD Y+6, temp
-    ;STD Y+7, temp
-    ;STD Y+8, temp
-    ;STD Y+9, temp
-    ;STD Y+10, temp
-    ;STD Y+11, temp
-    ;STD Y+12, temp
-    ;STD Y+13, temp
-    ;STD Y+14, temp
-    ;STD Y+15, temp
-
+	RJMP keyboard
+	tempmain: RJMP main
 	
 	; STEP 1 of Keyboard check
 	; Check if all COL are HIGH
@@ -339,14 +328,15 @@ main:
 
     reset:
     	; no COL is detected to be pressed, rows are not checked
-        BRTC main               ; if T = 0 → no key pressed → jump to main
+        BRTC tempmain               ; if T = 0 → no key pressed → jump to main
         INC switch              ; if T = 1 → key pressed → increment the switch(select if low or high part of a byte)
         SBI LED_PIN,LEDUP_P
         CLT                     ; clear T
         CPSE eof, asciiof
         RJMP pwdencode
-        oefasked: INC stepreg
-        MOVW YL, XL
+        INC stepreg
+        LDI YL, low(Cell)
+		LDI YH, high(Cell)
         RJMP main
 
         pwdencode: SBRS stepreg, 0 ; skip if not in passsword encoding
@@ -479,20 +469,20 @@ main:
 
 ; to toggle SCREEN_LE after a certain amount of time
 timer0_ovf:
-	PUSH temp
+	MOV pushapop, temp
 	LDI temp,TCNT0_RESET_1M
 	STS TCNT0,temp
 
 	SBI SCREEN_PIN,SCREEN_LE
 
     ; retreive temp value
-    POP temp
+    MOV temp, pushapop
     ;return
     RETI
 
 timer2_ovf:
     ; interruption routine at 60Hz/line
-    PUSH temp ; to keep current value of temp
+    MOV pushapop, temp ; to keep current value of temp
 
     ; reset timer counter
     LDI temp,TCNT2_RESET_480
@@ -540,15 +530,16 @@ timer2_ovf:
     ; set PB4 HIGH, wait 100 us
     end:
         SBI SCREEN_PIN,SCREEN_LE ; toggle SCREEN_LE
-
+        Loop venere1
+        SBI SCREEN_PIN,SCREEN_LE
         ; switch on the other timer
-        LDS temp,TCCR0B
+        ;LDS temp,TCCR0B
         ;SBR temp,(1<<CS02)|(1<<CS01)|(1<<CS00)
-        SBR temp,(1<<CS01)
-        STS TCCR0B,temp
+        ;SBR temp,(1<<CS01)
+        ;STS TCCR0B,temp
 
         ;retreive the temp value
-        POP temp
+        MOV temp, pushapop
     
         ;return
         RETI

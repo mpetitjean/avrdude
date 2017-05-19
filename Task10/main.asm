@@ -24,7 +24,7 @@
 ;TCNT 1 RESET VALUE
 .EQU TCNT2_RESET_480 = 223
 .EQU TCNT0_RESET_1M = 240
-
+	
 
 ;--------
 ; MACROS
@@ -59,7 +59,7 @@ init:
 	OUT SCREEN_PORT, r17
 	OUT SCREEN_DDR, r17
 
-	; configure timer 1 in normal mode (count clk signals)
+	; configure timer 2 in normal mode (count clk signals)
 	; WGM20 = 0   WGM21 = 0      
 	; p155 datasheet
 	LDS r16,TCCR2A
