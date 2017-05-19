@@ -570,13 +570,13 @@ ASCII:
     .dw Character7<<1
     .dw Character8<<1
     .dw Character9<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
+    .dw CharacterDoubleDot<<1
+    .dw CharacterSemiCol<<1
+    .dw CharacterLower<<1
+    .dw CharacterEqual<<1
+    .dw CharacterGreater<<1
+    .dw CharacterInterrogation<<1
+    .dw CharacterAt<<1
     .dw CharacterA<<1
     .dw CharacterB<<1
     .dw CharacterC<<1
@@ -800,3 +800,24 @@ Character8:
 
 Character9:
 	.db 0b01111, 0b01001, 0b01001, 0b01111, 0b00001, 0b00001, 0b01111, 0
+
+CharacterDoubleDot:
+	.db 0, 0, 0b00100, 0, 0b00100, 0, 0, 0
+
+CharacterSemiCol:
+	.db 0, 0, 0b00100, 0, 0b00100, 0b00100, 0b01000, 0
+
+CharacterLower:
+	.db 0, 0b00010, 0b00100, 0b01000, 0b00100, 0b00010, 0, 0
+
+CharacterEqual:
+	.db 0, 0, 0b01110, 0, 0b01110, 0, 0, 0
+
+CharacterGreater:
+	.db 0, 0b01000, 0b00100, 0b00010, 0b00100, 0b01000, 0, 0
+
+CharacterInterrogation:
+	.db 0b01110, 0b01010, 0b00010, 0b00110, 0b00100, 0, 0b00100, 0
+
+CharacterAt:
+	.db 0, 0b11111, 0b00001, 0b01101, 0b01101, 0b01001, 0b01111, 0
