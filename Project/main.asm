@@ -37,6 +37,12 @@
 .equ SWITCH_PIN	= PINB
 .equ SWITCH_P	= 0
 
+;Joystick
+.equ JOYSTICK_DDR 	= DDRB
+.equ JOYSTICK_PORT	= PORTB
+.equ JOYSTICK_PIN 	= PINB
+.equ JOYSTICK_P  	= 2
+
 ;SCREEN
 .equ SCREEN_DDR		= DDRB
 .equ SCREEN_PORT	= PORTB
@@ -54,16 +60,16 @@
 .DEF switch     = r1    ; to alternate low and high part of byte (for keyboard)
 .DEF cleareg  	= r2
 .DEF eof		= r3
-.DEF stepreg	= r4
-.DEF finish     = r5
+.DEF stepreg	= r18
+.DEF state      = r19
 .DEF temp       = r16   ; register for temp. value
+.DEF asciiof    = r17   ; to store the offset for ASCII table
 .DEF rowselect  = r21   ; to know the row to switch on
 .DEF rowoffset  = r22   ; select the column corresponding to the right row
-.DEF asciiof    = r17   ; to store the offset for ASCII table
 
 ;Memory
 .DSEG
-Cell: .BYTE 16; LED cell
+Cell: .BYTE 16; ASCII offset/cell
 .CSEG
 
 ;--------
@@ -174,17 +180,20 @@ init:
     SBI LED_PORT,LEDUP_P
     SBI LED_PORT,LEDDOWN_P
 
-    ; configure switch as output
-    CBI SWITCH_DDR, SWITCH_P
-    SBI SWITCH_PORT, SWITCH_P
+    ; configure switch as input
+    ;CBI SWITCH_DDR, SWITCH_P
+    ;SBI SWITCH_PORT, SWITCH_P
+
+    ; configure R3
+    CBI JOYSTICK_DDR,JOYSTICK_P
+    SBI JOYSTICK_PORT,JOYSTICK_P
 
     ;Clear Register
     CLR zero
     CLR switch
     CLR stepreg
-    
-    CLR finish
-    INC finish
+    CLR state
+
     ; Reg constant values
     LDI rowoffset, 6
     LDI rowselect, 1<<6
@@ -269,6 +278,45 @@ init:
 
 main:
 	
+	IN temp, JOYSTICK_PIN
+	SBRS temp, JOYSTICK_P
+	RJMP pressed
+	CBI LED_PORT,LEDDOWN_P
+	RJMP keyboard
+	pressed:
+	SBI LED_PORT,LEDDOWN_P
+	;SBRC state,0
+	;RJMP keyboard
+	;MOVW YL, XL
+	;LDI stepreg,1
+	;LDI state,1
+	;RJMP keyboard
+
+		
+	;SBRS state,0
+	;RJMP keyboard
+	;LDI state,0
+	;LDI stepreg,0
+	;;MOVW YL, XL
+	;LDI temp, 32
+    ;ST Y, temp
+    ;STD Y+1, temp
+    ;STD Y+2, temp
+    ;STD Y+3, temp
+    ;STD Y+4, temp
+    ;STD Y+5, temp
+    ;STD Y+6, temp
+    ;STD Y+7, temp
+    ;STD Y+8, temp
+    ;STD Y+9, temp
+    ;STD Y+10, temp
+    ;STD Y+11, temp
+    ;STD Y+12, temp
+    ;STD Y+13, temp
+    ;STD Y+14, temp
+    ;STD Y+15, temp
+
+	
 	; STEP 1 of Keyboard check
 	; Check if all COL are HIGH
     ; First set all rows to LOW as output and cols as inputs
@@ -297,7 +345,7 @@ main:
         CLT                     ; clear T
         CPSE eof, asciiof
         RJMP pwdencode
-        INC stepreg
+        oefasked: INC stepreg
         MOVW YL, XL
         RJMP main
 
@@ -430,9 +478,6 @@ main:
 
 
 ; to toggle SCREEN_LE after a certain amount of time
-timer0_ovf:
-	PUSH temp ; to keep current value of temp
-
 timer0_ovf:
 	PUSH temp
 	LDI temp,TCNT0_RESET_1M
