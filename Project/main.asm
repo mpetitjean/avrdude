@@ -2,16 +2,15 @@
 ; PROJECT
 ; EnigmAssembly
 ;
-; Created: 08/03/2017 17:00:00
-; Author : Mathieu Petitjean & Cedric Hannotier
+; Authors : Mathieu Petitjean & Cedric Hannotier
 
 .include "m328pdef.inc"
 
-;------------
-; CONSTANTS
-;------------
+;--------
+; ALIASES
+;--------
 
-;KEYBOARD - MATRIX LIKE NUMEROTATION
+; KEYBOARD NUMEROTATION
 .equ KEYB_PIN	= PIND
 .equ KEYB_DDR	= DDRD
 .equ KEYB_PORT	= PORTD
@@ -24,20 +23,20 @@
 .equ COL3		= 1
 .equ COL4		= 0
 
-;LEDs
+; LEDs
 .equ LEDUP_P	= 2
 .equ LEDDOWN_P	= 3
 .equ LED_DDR	= DDRC
 .equ LED_PORT	= PORTC
 .equ LED_PIN	= PINC
 
-;Joystick
+;JOYSTICK
 .equ JOYSTICK_DDR 	= DDRB
 .equ JOYSTICK_PORT	= PORTB
 .equ JOYSTICK_PIN 	= PINB
 .equ JOYSTICK_P  	= 2
 
-;SCREEN
+; SCREEN
 .equ SCREEN_DDR		= DDRB
 .equ SCREEN_PORT	= PORTB
 .equ SCREEN_PIN		= PINB
@@ -55,6 +54,10 @@
 .DEF cleareg  	= r2 	; Value offset to space ASCII character 
 .DEF eof		= r3 	; Value offset to EOF ASCII character
 .DEF pushapop	= r4 	; Push and Pop register (avoid to access RAM)
+.DEF lborderlow	= r5	; Verify we do not "underflow"
+.DEF lborderhigh= r6	; Verify we do not "underflow"
+.DEF rborderlow	= r7 	; Verify we do not "overflow"
+.DEF rborderhigh= r8 	; Verify we do not "overflow"
 .DEF temp       = r16   ; Register for temp value
 .DEF asciiof    = r17   ; To store the offset for ASCII table
 .DEF stepreg	= r18 	; Write or XOR (0 = Write)
@@ -65,7 +68,7 @@
 
 ;Memory
 .DSEG
-Cell: .BYTE 16; ASCII offset/cell
+Cell: .BYTE 17; ASCII offset/cell
 .CSEG
 
 ;--------
@@ -84,36 +87,60 @@ Cell: .BYTE 16; ASCII offset/cell
 ; Store part of ASCII offset in low or high part of asciiof register
 ; if switch(0) = 1 → low part, else high
 .MACRO HexToASCII
-SBR asciiof, @0
-SBRS switch, 0
-LDI asciiof, @0<<4
+	SBR asciiof, @0
+	SBRS switch, 0
+	LDI asciiof, @0<<4
 .ENDMACRO
 
 ; Wait
-.MACRO Loop
-CLR temp
-begin@0:
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    NOP
-    DEC temp
-    BRNE begin@0
+.MACRO loop
+	CLR temp
+	begin@0:
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    NOP
+	    DEC temp
+	    BRNE begin@0
 .ENDMACRO
 
+;Clear offset memory (spaces)
+.MACRO clearMem
+	LDI YH, high(Cell)
+    LDI YL, low(Cell)
+
+    ; Clear Screen (put spaces everywhere)
+    LDI temp, 32
+    ST Y, temp
+    STD Y+1, temp
+    STD Y+2, temp
+    STD Y+3, temp
+    STD Y+4, temp
+    STD Y+5, temp
+    STD Y+6, temp
+    STD Y+7, temp
+    STD Y+8, temp
+    STD Y+9, temp
+    STD Y+10, temp
+    STD Y+11, temp
+    STD Y+12, temp
+    STD Y+13, temp
+    STD Y+14, temp
+    STD Y+15, temp
+.ENDMACRO
 ; Detect key pressed from keyboard (step 2 of two-steps method)
 .MACRO keyboardStep2
     ; Switch in/out for rows and columns
@@ -121,7 +148,7 @@ begin@0:
     OUT KEYB_PORT,temp
     LDI temp,(1<<COL1)|(1<<COL2)|(1<<COL3)|(1<<COL4)
     OUT KEYB_DDR,temp
-    Loop key2
+    loop key2
     ; Check which row is LOW
     SBIS KEYB_PIN,ROW1
     RJMP @0
@@ -202,28 +229,20 @@ init:
     MOV eof, temp 				; Offset to EOF
     LDI stateJoy, 1 			; Joystick not pressed
 
-    ; Store Cell table adress in Y, point to the next cell we need to configure
-    LDI YH, high(Cell)
-    LDI YL, low(Cell)
+    							; Adress Cell - 1 (outside of the screen)
+    LDI temp, low(Cell-1)
+    MOV lborderlow, temp 		
+    LDI temp, high(Cell-1)
+    MOV lborderhigh, temp
 
-    ; Clear Screen (put spaces everywhere)
-    LDI temp, 32
-    ST Y, temp
-    STD Y+1, temp
-    STD Y+2, temp
-    STD Y+3, temp
-    STD Y+4, temp
-    STD Y+5, temp
-    STD Y+6, temp
-    STD Y+7, temp
-    STD Y+8, temp
-    STD Y+9, temp
-    STD Y+10, temp
-    STD Y+11, temp
-    STD Y+12, temp
-    STD Y+13, temp
-    STD Y+14, temp
-    STD Y+15, temp
+    							; Adress Cell + 17 (outside + 1 of the screen to avoid breaking backspace)
+    LDI temp, low(Cell+17)
+    MOV rborderlow, temp
+    LDI temp, high(Cell+17)
+    MOV temp, rborderhigh
+
+    ; Store Cell table adress in Y, point to the next cell we need to configure and clear the memory to show spaces.
+    clearMem
 
     ; TIMER 2 - each line needs to be refreshed at 60Hz
     ; configure timer 2 in normal mode (count clk signals)
@@ -254,7 +273,25 @@ init:
     RJMP main
 
 main:
+	CPSE YL, lborderlow
+	RJMP overflow
+	CPSE YH, lborderhigh
+	RJMP overflow
+	LDI YL, low(Cell)
+	LDI YH, high(Cell)
+
+	RJMP JoystickCheck
+
+overflow:
+	CPSE YL, rborderlow
+	RJMP JoystickCheck
+	CPSE YH, rborderhigh
+	RJMP JoystickCheck
+	LDI YL, low(Cell+16)
+	LDI YH, high(Cell+16)
+
 	; Check state of the joystick
+JoystickCheck:
 	IN temp, JOYSTICK_PIN
 	; If pressed, bit is cleared → skip
 	SBRS temp, JOYSTICK_P
@@ -279,25 +316,7 @@ main:
 
 	; Clear the screen and go back to first cell
 	bigclear: 
-		LDI YL, low(Cell)
-		LDI YH, high(Cell)
-		LDI temp, 32
-	    ST Y, temp
-	    STD Y+1, temp
-	    STD Y+2, temp
-	    STD Y+3, temp
-	    STD Y+4, temp
-	    STD Y+5, temp
-	    STD Y+6, temp
-	    STD Y+7, temp
-	    STD Y+8, temp
-	    STD Y+9, temp
-	    STD Y+10, temp
-	    STD Y+11, temp
-	    STD Y+12, temp
-	    STD Y+13, temp
-	    STD Y+14, temp
-	    STD Y+15, temp
+		clearMem
 	    LDI stepreg, 0
 	    LDI state, 0
 	    RJMP keyboard
@@ -307,7 +326,6 @@ main:
 		LDI stateJoy, 0 			; Change state of the Joystick
 		SBI LED_PORT,LEDDOWN_P
 		RJMP keyboard 				; Go to keyboard detection
-		tempmain: RJMP main
 	
 
 	; STEP 1 of Keyboard check
@@ -318,7 +336,7 @@ main:
 	    OUT KEYB_PORT,temp
 	    LDI temp,(1<<ROW1)|(1<<ROW2)|(1<<ROW3)|(1<<ROW4)
 	    OUT KEYB_DDR,temp
-	    Loop key1
+	    loop key1
 	    ; COLx is LOW => check for the rows (step2)
 	    SBIS KEYB_PIN,COL1
 	    RJMP C1Pressed
@@ -332,10 +350,12 @@ main:
 
     ; No COL is detected to be pressed, rows are not checked
     reset:
-        BRTC tempmain               ; If T = 0 → no key pressed → jump to main
+        BRTC jumptomain               ; If T = 0 → no key pressed → jump to main
         INC switch              	; If T = 1 → key pressed → increment the switch(select if low or high part of a byte)
         SBI LED_PIN,LEDUP_P
         CLT                 	    ; Clear T
+        SBRC switch, 0				; Skip if byte is full (second key pressed)
+    jumptomain: RJMP main
         CPSE eof, asciiof
         RJMP pwdencode 				; Go to pwdencode if NOT eof as last character
         INC stepreg					; Switch step state
@@ -346,8 +366,6 @@ main:
     pwdencode: 
         SBRS stepreg, 0 			; Skip if in XOR
         RJMP clear
-        SBRC switch, 0				; Skip if byte is full (second key pressed)
-        RJMP main
         LD temp, Y 					; Load current offset
         EOR asciiof, temp
         ST Y+, asciiof
@@ -522,7 +540,7 @@ timer2_ovf:
     ; Set SCREEN_LE HIGH, wait a suficient amount of time
     end:
         SBI SCREEN_PIN,SCREEN_LE
-        Loop screenLoop
+        loop screenLoop
         SBI SCREEN_PIN,SCREEN_LE
         
         ; Retrieve the temp value
@@ -627,42 +645,42 @@ ASCII:
     .dw CharacterX<<1
     .dw CharacterY<<1
     .dw CharacterZ<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
-    .dw CharacterEmpty<<1
+    .dw CharacterBracketLeft<<1
+    .dw CharacterBackslash<<1
+    .dw CharacterBracketRight<<1
+    .dw CharacterHat<<1
+    .dw CharacterUnderscore<<1
+    .dw CharacterGAccent<<1
+	.dw Characteral<<1
+	.dw Characterbl<<1
+	.dw Charactercl<<1
+	.dw Characterdl<<1
+	.dw Characterel<<1
+	.dw Characterfl<<1
+	.dw Charactergl<<1
+	.dw Characterhl<<1
+	.dw Characteril<<1
+	.dw Characterjl<<1
+	.dw Characterkl<<1
+	.dw Characterll<<1
+	.dw Characterml<<1
+	.dw Characternl<<1
+	.dw Characterol<<1
+	.dw Characterpl<<1
+	.dw Characterql<<1
+	.dw Characterrl<<1
+	.dw Charactersl<<1
+	.dw Charactertl<<1
+	.dw Characterul<<1
+	.dw Charactervl<<1
+	.dw Characterwl<<1
+	.dw Characterxl<<1
+	.dw Characteryl<<1
+	.dw Characterzl<<1
+    .dw CharacterLeftBrace<<1
+    .dw CharacterSep<<1
+    .dw CharacterRightBrace<<1
+    .dw CharacterTilde<<1
     .dw CharacterEmpty<<1
     .dw CharacterEmpty<<1
 
@@ -781,7 +799,7 @@ CharacterU:
     .db 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b1111, 0
 
 CharacterV:
-    .db 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b1001, 0b0110, 0
+    .db 0b1010, 0b1010, 0b1010, 0b1010, 0b1010, 0b1010, 0b0100, 0
 
 CharacterW:
     .db 0b1001, 0b1001, 0b1001, 0b1001, 0b1111, 0b1111, 0b1001, 0
@@ -845,3 +863,111 @@ CharacterInterrogation:
 
 CharacterAt:
 	.db 0, 0b11111, 0b00001, 0b01101, 0b01101, 0b01001, 0b01111, 0
+
+CharacterBracketLeft:
+	.db 0b1100, 0b1000, 0b01000, 0b01000, 0b01000, 0b01000, 0b1100, 0
+
+CharacterBackslash:
+	.db 0, 16, 8, 4, 2, 1, 0, 0
+
+CharacterBracketRight:
+	.db 0b110, 2, 2, 2, 2, 2, 0b110, 0	
+CharacterHat:
+	.db 0, 4, 0b01010, 0, 0, 0, 0, 0
+
+CharacterUnderscore:
+	.db 0, 0, 0, 0, 0, 0b01110, 0, 0
+
+CharacterGAccent:
+	.db 0, 4, 2, 0, 0, 0, 0, 0
+
+Characteral:
+	.db 0, 0, 0b00110, 1, 0b111, 0b1001, 0b111, 0
+
+Characterbl:
+	.db 8, 8, 8, 0b1110, 0b1001, 0b1001, 0b1110, 0
+
+Charactercl:
+	.db 0, 0, 0b110, 8, 8, 8, 0b110, 0,
+
+Characterdl:
+	.db 1, 1, 1, 0b111, 0b1001, 0b1001, 0b111, 0
+
+Characterel:
+	.db 0, 0b110, 0b1001, 0b1111, 8, 8, 0b111, 0
+
+Characterfl:
+	.db 0, 3, 4, 0b1110, 4, 4, 4, 0
+
+Charactergl:
+	.db 0, 0b101, 0b1011, 0b1011, 0b101, 1, 0b111, 0 
+
+Characterhl:
+	.db 0, 8, 8, 8, 0b1110, 0b1010, 0b1010, 0
+
+Characteril:
+	.db 0, 4, 0, 4, 4, 4, 4, 0
+
+Characterjl:
+	.db 0, 4, 0, 4, 4, 4, 0b11000, 0
+
+Characterkl:
+	.db 0, 8, 8, 0b1010, 0b1100, 0b1010, 0b1010, 0
+
+Characterll:
+	.db 0, 4, 4, 4, 4, 4, 4, 0
+
+Characterml:
+	.db 0, 0, 0b01010, 0b10101, 0b10101, 0b10101, 0b10101, 0
+
+Characternl:
+	.db 0, 0, 0b0100, 0b1010, 0b1010, 0b1010, 0b1010, 0
+
+Characterol:
+	.db 0, 0, 0b1110, 0b1010, 0b1010, 0b1010, 0b1110, 0
+
+Characterpl:
+	.db 0, 0, 0b1110, 0b1010, 0b1110, 8, 8, 0
+
+Characterql:
+	.db 0, 0, 0b1110, 0b1010, 0b1110, 2, 2, 0
+
+Characterrl:
+	.db 0, 0, 6, 8, 8, 8, 8, 0
+
+Charactersl:
+	.db 0, 0, 0b1110, 16, 12, 2, 0b11100, 0
+
+Charactertl:
+	.db 0, 8, 0b1110, 8, 8, 8, 0b110, 0
+
+Characterul:
+	.db 0, 0, 0, 10, 10, 10, 14, 0
+
+Charactervl:
+	.db 0, 0, 0, 10, 10, 10, 4, 0
+
+Characterwl:
+	.db 0, 0, 0, 0b10101, 0b10101, 0b10101, 10, 0
+
+Characterxl:
+	.db 0, 0, 17, 10, 4, 10, 17, 0
+
+Characteryl:
+	.db 0, 0, 10, 10, 4, 4, 4, 0
+
+Characterzl:
+	.db 0, 0, 0, 15, 2, 4, 15, 0
+
+CharacterLeftBrace:
+	.db 3, 4, 4, 8, 4, 4, 3, 0
+
+CharacterSep:
+	.db 4, 4, 4, 4, 4, 4, 4, 0
+
+CharacterRightBrace:
+	.db 12, 2, 2, 1, 2, 2, 12, 0
+
+CharacterTilde:
+	.db 0, 0, 5, 10, 0, 0, 0, 0
+
